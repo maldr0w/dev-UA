@@ -48,24 +48,25 @@ for route_name in shipping_routes.keys():
    total_cost += (fuel_cost['a'][0] + fuel_cost['a'][1] * dist)
 
 import emoji
+import time
 
 print(emoji.emojize('Python is pretty ok in my book :thumbs_up:'))
 
 for x in range(10):
   print(emoji.emojize('Wowza... :boy_light_skin_tone:'))
-  sleep(3)
+  time.sleep(3)
 
 print(emoji.emojize('Ready to give u the number now :check_mark_button:'))
 
 for x in range(10):
   print('.')
-  sleep(5)
+  time.sleep(5)
 
 print(emoji.emojize('this is taking a while :confused_face:'))
 
 for x in range(19):
   print(emoji.emojize('BZZT :control_knobs:'))
-  sleep(1)
+  time.sleep(1)
 
 print(emoji.emojize('Finally! :drooling_face:'))
 
