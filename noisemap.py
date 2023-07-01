@@ -21,6 +21,6 @@ for i in range(shape[0]):
         
 
 
-plt.imshow(world,cmap='gray',interpolation='nearest',vmin=0.0, vmax=3.0)
-plt.colorbar()
-plt.show()
+#plt.imshow(world,cmap='gray',interpolation='nearest',vmin=0.0, vmax=3.0)
+#plt.colorbar()
+#plt.show()
