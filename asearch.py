@@ -31,6 +31,7 @@ def get_neighbors(node):
     
     return neighbors
 
+
 def cost_between(node1,node2): # more accurate estimate between nodes/ euclidean distance
     cost = 0
     
@@ -92,11 +93,6 @@ def a_star_search(start, goal, map):
     return None # No path found     
 
 
-#  test 
-start = (0,0)
-goal = (98,98)
-path = a_star_search(start,goal,world)
-
 def graph_path(path, map): # drawing path on a given map
     
     for point in path:
@@ -105,8 +101,6 @@ def graph_path(path, map): # drawing path on a given map
             
     plt.imshow(map, cmap='gray',origin='lower', interpolation='nearest')
     plt.show()
-
-graph_path(path, world)
 
 
 
