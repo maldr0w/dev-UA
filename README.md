@@ -1,11 +1,18 @@
-# dev-UA
-Development of Uartic project
-
+# dev-UA - Development of Uartic project
+### Description and motivations:
+- This project is part of a summer internship at UIT
+- Creating a program that find the most time and cost efficient pathing for boats travelling in the artic region
+- Pathing is based on:
+	- Ice thickness: boats can pass through ice thicker than 2.1 meters (source)
+ 	- Fuel consumption and CO2 emission: _WIP_
+   	- Shortest, most reliable route
+   	- _more to come..._
 ---
+# Parts:
 
-#### A* Search Algorithm
+### A* Search Algorithm (A Star) 
 Graph traversal and path searching algorithm
-	Given a _start point_ and an _end point_, A* finds the most cost efficient path from start to finish by assigning a __g-score, h-score__ and __f-score__ to each _explorable node_ in the graph.
+	Given a _start point_ and an _end point_, A* finds the most cost efficient path from start to finish by assigning a __g-score, h-score__ and __f-score__ to each _explorable node_ in a graph.
 	The algorithm keeps the nodes within _open_ and _closed sets_. Nodes assigned to the open set being candidates for exploration while the already visited nodes are assigned to the closed set.
 	
 - __g-score:__ is the cost from the start node to via each node 
