@@ -1,6 +1,7 @@
 
 # A* Search Algorithm
 import numpy as np
+import matplotlib.pyplot as plt
 from noisemap import world
 
 # Heuristic (manhattan distance) estimate
@@ -42,7 +43,7 @@ def cost_between(node1,node2): # more accurate estimate between nodes/ euclidean
 
 
 # A* search algorithm
-def a_star_search(start, goal):
+def a_star_search(start, goal, map):
     open_set = {start}  # create open set, unordered list, will hold potential nodes
     closed_set = set()  # empty set, for explored nodes
     came_from = {}      # store parent node for each node 
@@ -65,6 +66,12 @@ def a_star_search(start, goal):
         for neighbor in get_neighbors(current_node):
             if neighbor in closed_set:
                 continue # move to next neighbor
+
+            # if neighbor value is more than 2, check another node.
+            # we cannot move across fields with higher value than 2..
+            if map[neighbor[0]][neighbor[1]] > 2:
+                # print('ice')
+                continue
             
             tentative_gscore = gscore[current_node] + cost_between(current_node, neighbor) # calculate gscore
 
@@ -83,27 +90,24 @@ def a_star_search(start, goal):
 
 
     return None # No path found     
-    
 
 
-
-# test 
+#  test 
 start = (0,0)
-goal = (5,5)
-path = a_star_search(start,goal)
-if path:
-    print("path found", path)
-else:
-    print('no path')
+goal = (98,98)
+path = a_star_search(start,goal,world)
+
+def graph_path(path, map): # drawing path on a given map
+    
+    for point in path:
+        x, y = point
+        map[x,y] = 0
+            
+    plt.imshow(map, cmap='gray',origin='lower', interpolation='nearest')
+    plt.show()
+
+graph_path(path, world)
 
 
 
-#runscript
 
-graph = [['-' for _ in range(goal[0])] for _ in range(goal[1])]
-
-for x, y in path:
-    graph[x][y] = 'X'
-
-for row in graph:
-    print(' '.join(row))
