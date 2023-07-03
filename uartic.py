@@ -18,6 +18,10 @@ graph_path(path, world)
 plt.show()
 
 
+# Starting on data aquizition
+
+
+
 
 
 
