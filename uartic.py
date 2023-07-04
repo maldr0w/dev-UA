@@ -5,6 +5,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from netCDF4 import Dataset
 
 from asearch import a_star_search, graph_path
 from noisemap import world
@@ -19,23 +20,23 @@ from noisemap import world
 
 
 # Starting on data aquizition
+# nc_file = Dataset('NSIDC_20220301.nc','r')
+
+
+# variable_names = list(nc_file.variables.keys())
+# for var_name in variable_names:
+#     print(var_name)
 
 
 
-
-
-
-
+# print(nc_file.variables[''])
+ 
 # Data aquizition
 # from netCDF4 import Dataset
 
 # nc_file = Dataset('ice_thickness.nc','r') 
 
 # # Finding variable names
-# variable_names = list(nc_file.variables.keys())
-# # for var_name in variable_names:
-# #     print(var_name)
-
 # # Access data varibales
 # ice_thickness = nc_file.variables['sea_ice_thickness'] 
 # latitude = nc_file.variables['lat']
