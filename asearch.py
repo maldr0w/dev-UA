@@ -2,7 +2,6 @@
 # A* Search Algorithm
 import numpy as np
 import matplotlib.pyplot as plt
-from noisemap import world
 
 # Heuristic (manhattan distance) estimate
 def heuristic(node,goal):
@@ -21,25 +20,19 @@ def reconstruct_path(came_from, current_node):
     
 def get_neighbors(node):
     neighbors = []
-    x, y = node
-    
-    # Adding each neighbor   
+    x, y = node  
     neighbors.append((x,y+1)) # up
     neighbors.append((x,y-1)) # down
     neighbors.append((x+1,y)) # right
     neighbors.append((x-1,y)) # left
-    
     return neighbors
 
 
 def cost_between(node1,node2): # more accurate estimate between nodes/ euclidean distance
     cost = 0
-    
     x1, y1 = node1
     x2, y2 = node2
-    
     cost = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
-    
     return cost
 
 
@@ -59,7 +52,6 @@ def a_star_search(start, goal, map):
 
 
         # Having found the lowest fscore node:
-         
         open_set.remove(current_node) # we remove the node from set of possible nodes
         closed_set.add(current_node)  # and add it to explored nodes 
 
@@ -91,17 +83,4 @@ def a_star_search(start, goal, map):
 
 
     return None # No path found     
-
-
-def graph_path(path, map): # drawing path on a given map
-    
-    for point in path:
-        x, y = point
-        map[x,y] = 0
-            
-    plt.imshow(map, cmap='gray',origin='lower', interpolation='nearest')
-    plt.show()
-
-
-
 
