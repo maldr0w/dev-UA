@@ -1,6 +1,6 @@
 # dev-UA - Development of Uartic project
 ### Description and motivations:
-- This project is part of a summer internship at UIT
+- This project is part of a summer job at UIT
 - Creating a program that find the most time and cost efficient pathing for boats travelling in the artic region
 - Pathing is based on:
 	- Ice thickness: boats can pass through ice thicker than 2.1 meters (source)
@@ -33,4 +33,30 @@ Graph traversal and path searching algorithm
 ##### f-score:
 - f-score is the sum of the g-score and h-score, it takes the whole path via a specific node to the end point into account. The algorithm will favor paths that strike a cost balance between the initial cost (g-score) and estimated remaining cost (h-score).
 
+---
+
+## Current outcome:
+- A* produces a optimal path
+- Using path and random noisemap to draw a nice picture:
+
+![image](https://github.com/maldr0w/dev-UA/assets/74768806/b7f22d4d-a8fd-48b4-bc82-e7059939baf9)
+
+### To develope:
+
+Done:
+- ~~A*search algorithm~~
+- ~~Path point reduction~~
+- ~~Graphing map + path lines~~
+  
+To do:
+- Make sea ice dataset workable
+- Apply A* algorithm to real sea ice dataset
+- Map pathing onto polar coordinates 
+- etc...
+
+Further down:
+- Implement everything to work together in a single program
+- Working with cost efficiency, Co2 emission and fuel consumption
+- Create UI (maybe...)
+- etc...
 ---
