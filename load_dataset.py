@@ -1,30 +1,36 @@
 
-
 import numpy as np
 import matplotlib.pyplot as plt
 from netCDF4 import Dataset
-# Open the netCDF file
-nc_file = Dataset('ice_thickness.nc', 'r')
 
-# Access the necessary variables
-ice_thickness = nc_file.variables['sea_ice_thickness']
-latitude = nc_file.variables['lat']
-longitude = nc_file.variables['lon']
+def plot(nc_file): #workign tittles
+        # Access the necessary variables
+        ice_thickness = nc_file.variables['sea_ice_thickness']
+        latitude = nc_file.variables['lat']
+        longitude = nc_file.variables['lon']
+        
+        # Read the data
+        ice_thickness = ice_thickness[:].squeeze()
+        latitude = latitude[:]
+        longitude = longitude[:]    
 
-# Read the data
-ice_thickness_data = ice_thickness[:].squeeze()
-latitude_data = latitude[:]
-longitude_data = longitude[:]
-
-# Plot the ice thickness data as an image
-plt.imshow(ice_thickness_data, aspect='auto', cmap='viridis')
-           #, extent=[longitude_data.min(), longitude_data.max(),
-                   # latitude_data.min(), latitude_data.max()])
-plt.colorbar(label='Ice Thickness (m)')
-plt.xlabel('Longitude')
-plt.ylabel('Latitude')
-plt.title('Arctic Sea Ice Thickness')
-plt.show()
-
+        lat_grid = np.arange(latitude.shape[0])
+        lon_grid = np.arange(longitude.shape[0])
+        
+        plt.figure(figsize=(10,6))
+        plt.pcolormesh(lon_grid, lat_grid, ice_thickness, cmap='jet')
+        plt.colorbar(label='Ice thickness (m)')
+        plt.gca().invert_yaxis()
+        plt.xlabel('Longitude (degrees east)')
+        plt.ylabel('Latitude (degrees north)')
+        plt.title('Arctic Region Sea Ice')
+        plt.grid(True)
+        
+        plt.show()  
 
 
+nc_file_22 = Dataset('ice_thickness_2022.nc', 'r')
+nc_file_21 = Dataset('ice_thickness_2021.nc', 'r')
+
+plot(nc_file_22)
+plot(nc_file_21)
