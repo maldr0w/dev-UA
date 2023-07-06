@@ -41,6 +41,18 @@ Graph traversal and path searching algorithm
 
 ![image](https://github.com/maldr0w/dev-UA/assets/74768806/b7f22d4d-a8fd-48b4-bc82-e7059939baf9)
 
+
+
+
+#### Started working with datasets:
+
+![image](https://github.com/maldr0w/dev-UA/assets/74768806/65f0b265-8647-4e7f-89f6-0fd66a9dcb0c)
+
+
+
+
+
+
 ### To develope:
 
 Done:
