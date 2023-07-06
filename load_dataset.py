@@ -3,6 +3,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 from netCDF4 import Dataset
 
+
+
+
+def load_data(nc_file)
+        # Access the necessary variables
+        ice_thickness = nc_file.variables['sea_ice_thickness']
+        latitude = nc_file.variables['lat']
+        longitude = nc_file.variables['lon']
+        
+        # Read the data
+        ice_thickness = ice_thickness[:].squeeze()
+        latitude = latitude[:]
+        longitude = longitude[:]    
+
+        lat_grid = np.arange(latitude.shape[0])
+        lon_grid = np.arange(longitude.shape[0])
+
+        return
+
+        
+
+
+
+
 def plot(nc_file): #workign tittles
         # Access the necessary variables
         ice_thickness = nc_file.variables['sea_ice_thickness']

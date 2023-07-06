@@ -26,7 +26,7 @@ for i in range(shape[0]):
         mapped_value = np.interp(value, [-1,1], [0.0, 3.0])
         noisemap[i][j]=mapped_value
         
-
+print(noisemap.shape)
 
 # plt.imshow(world,cmap='gray',interpolation='nearest',vmin=0.0, vmax=3.0)
 # # plt.axline((4,4),(20,20),color='red')
