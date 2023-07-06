@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 from asearch import a_star_search
 from noisemap import noisemap
 
-
 def reduce_path(path):
     reduced_path = [path[0]]
     last_point = None
@@ -31,12 +30,13 @@ def reduce_path(path):
     return reduced_path
 
 
-
 def draw_path(path, map): # drawing path on a given map
     plt.imshow(map, cmap='gray',origin='lower', interpolation='nearest')
     plt.plot(*zip(*path), color='red') # zip fixes this line somehow       
     plt.show()
 
+
+# Calling algorithm, reducing path and drawing graph
 
 start = (0,0)
 goal = (98,98)
@@ -45,6 +45,4 @@ path = a_star_search(start, goal, noisemap)
 reduced_path = reduce_path(path)
 
 draw_path(reduced_path, noisemap)
-
-
 

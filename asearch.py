@@ -3,6 +3,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from global_land_mask import globe
+
 # Heuristic (manhattan distance) estimate
 def heuristic(node,goal):
     x1, y1 = node
@@ -62,9 +64,13 @@ def a_star_search(start, goal, map):
 
             # if neighbor value is more than 2, check another node.
             # we cannot move across fields with higher value than 2..
+
             if map[neighbor[0]][neighbor[1]] > 2:
                 # print('ice')
                 continue
+
+            # if globe.is_land(neighbor): # Check a neighbor is on land
+            #     continue
             
             tentative_gscore = gscore[current_node] + cost_between(current_node, neighbor) # calculate gscore
 
