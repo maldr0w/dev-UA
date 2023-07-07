@@ -28,6 +28,8 @@ for i in range(shape[0]):
         
 print(noisemap.shape)
 
+print(noisemap)
+
 # plt.imshow(world,cmap='gray',interpolation='nearest',vmin=0.0, vmax=3.0)
 # # plt.axline((4,4),(20,20),color='red')
 # plt.colorbar()
