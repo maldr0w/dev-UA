@@ -2,88 +2,100 @@
 from asearch import a_star_search
 from netCDF4 import Dataset
 
-import numpy as np
 import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
+import numpy as np
+import cartopy as cp
 
-# Open the NetCDF file
-dataset = Dataset('ice_thickness_2021.nc', 'r')
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+
+import xarray as xr
+
+
+# # Open the NetCDF file
+# dataset = Dataset('ice_thickness_2021.nc', 'r')
 
 
 # # Read latitude, longitude, and ice thickness variables
-latitude = dataset.variables['lat'][0]
-longitude = dataset.variables['lon'][0]
-thickness = dataset.variables['sea_ice_thickness'][:].squeeze()
+# latitude = dataset.variables['lat']
+# longitude = dataset.variables['lon'][:]
+# ice_thickness = dataset.variables['sea_ice_thickness'][:].squeeze()
 
 # # Close the NetCDF file
 # dataset.close()
 
-# # Create a map plot
-# fig = plt.figure(figsize=(10, 6))
-# ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-
-# # Plot ice thickness data as scatter points on the map
-# scatter = ax.scatter(longitude, latitude, c=ice_thickness, cmap='cool')
-
-# # Add colorbar
-# cbar = plt.colorbar(scatter, ax=ax, label='Ice Thickness')
-
-# # Set the map title and labels
-# ax.set_title('Ice Thickness Map')
-# ax.set_xlabel('Longitude')
-# ax.set_ylabel('Latitude')
-
-# # Show the plot
-# plt.show()
-
-# print(latitude.data)
-# print(np.median(longitude.data))
+# latitude = np.arange(latitude.shape[0])
+# longitude = np.arange(longitude.shape[0])
 
 
-from mpl_toolkits.basemap import Basemap
-from itertools import chain
+# Creating map
+fig, ax = plt.subplots(1,1,figsize=(8,8), 
+            subplot_kw={'projection':cp.crs.NorthPolarStereo()})
 
-def draw_map(m, scale=0.2):
-    # draw a shaded-relief image
-    m.shadedrelief(scale=scale)
-    
-    # lats and longs are returned as a dictionary
-    lats = m.drawparallels(np.linspace(-90, 90, 13))
-    lons = m.drawmeridians(np.linspace(-180, 180, 13))
+ax.set_extent([-180,180,90,66], cp.crs.PlateCarree())
+ax.add_feature(cp.feature.LAND, edgecolor='black', zorder=1)
+ax.set_facecolor((1.0,1.0,1.0))
 
-    # keys contain the plt.Line2D instances
-    lat_lines = chain(*(tup[1][0] for tup in lats.items()))
-    lon_lines = chain(*(tup[1][0] for tup in lons.items()))
-    all_lines = chain(lat_lines, lon_lines)
-    
-    # cycle through these lines and set the desired style
-    for line in all_lines:
-        line.set(linestyle='-', alpha=0.3, color='w')
+# ax.coastlines()
 
+gl = ax.gridlines(draw_labels=True, alpha=0.5,color='gray', 
+             linestyle='-', linewidth=0.5, 
+             xlocs=np.arange(-180, 181, 30),
+             ylocs=np.arange(60, 91, 5))
 
+# gl.xlabels_top = False
+# gl.ylabels_left = False
+# gl.ylabels_right = True
 
-
+gl.xlabel_style = {'size': 8}
+gl.ylabel_style = {'size': 8}
 
 
-fig = plt.figure(figsize=(8,8))
-# m = Basemap(projection='lcc', resolution = None,
-#             lat_0 = np.median(latitude.data), lon_0 = np.median(longitude.data),
-#             llcrnrlon = np.min(longitude.data), llcrnrlat=np.min(latitude.data),
-#             urcrnrlon=np.max(longitude.data), urcrnrlat=np.max(latitude.data))
-m = Basemap(projection='lcc', resolution = None,
-            width = 8E6, height=8E6,
-            lat_0 = 79.037, lon_0 = 59.164)
-            
+# plt.pcolormesh(longitude, latitude, ice_thickness, cmap='jet')
+
+# plotting data
+# ax.legend(fontsize='x-large')
+
+# ax.scatter(longitude,latitude,
+#            color='k', marker='x',
+#            transform = cp.crs.PlateCarree(),
+#            zorder=5, label='Arctic Sea Ice')
+
+#####
 
 
+dataset = Dataset('ice_thickness_2021.nc', 'r')
+ice_thickness = dataset['sea_ice_thickness'][:].squeeze()
+latitude = dataset['lat'][:]
+longitude = dataset['lon'][:]
 
-# m.scatter(longitude.data, latitude.data, latlon=True, c=thickness[0], s=25000*25000, cmap='Reds', alpha=0.5)
-# m.scatter(np.median(latitude.data), np.median(longitude.data))
-plt.pcolormesh(longitude.data, latitude.data,thickness, cmap='jet')
-plt.colorbar()
-plt.xlabel('lon')
-plt.ylabel('lat')
-draw_map(m)
+# print(ice_thickness.shape)
+# plt.pcolormesh(longitude, latitude, ice_thickness, cmap='jet', vmin = np.max(ice_thickness), vmax = np.min(ice_thickness))
+
+# masked_value = 0
+# masked_ice_thickness = np.ma.masked_values(ice_thickness, masked_value)
+
+
+# plt.pcolormesh([longitude, latitude], ice_thickness, cmap='jet')
+cs = plt.pcolormesh(longitude, latitude, ice_thickness, cmap='jet')
+
+plt.contourf(longitude, latitude, ice_thickness, 60, transform = cp.crs.PlateCarree(), vmin=np.min(ice_thickness), vmax=np.max(ice_thickness))
+plt.colorbar(cs)
+
+
+# extent = [longitude.min(), longitude.max(), latitude.min(), latitude.max()],
+# ax.add_feature(states_fill, linewidth=0.45, zorder=0)
+
+# Set the masked value
+# masked_value = -9999
+
+# # Create a masked array for ice thickness
+# masked_ice_thickness = np.where(ice_thickness != masked_value, ice_thickness, np.nan)
+
+# # Plot the masked ice thickness data
+# im = ax.imshow(ice_thickness, cmap='jet', extent=[longitude.min(), longitude.max(), latitude.min(), latitude.max()],
+#      transform=cp.crs.PlateCarree())
+
+# p = plt.gca()
+# p.set_facecolor((1.0,1.0,1.0))
 plt.show()
-
 
