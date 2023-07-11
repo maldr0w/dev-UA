@@ -1,15 +1,18 @@
 # dev-UA - Development of Uartic project
 ### Description and motivations:
 - This project is part of a summer job at UIT
-- Creating a program that find the most time and cost efficient pathing for ships travelling in the artic region
+- The goal is to create a program that find the most time and cost efficient pathing for ships travelling in the artic region
 - Pathing is based on:
 	- Ice thickness: ships cannot pass through ice thicker than 2.1 meters (source)
  	- Fuel consumption and CO2 emission: _WIP_
    	- Shortest, most reliable route
    	- _more to come..._
 
+	![image](https://github.com/maldr0w/dev-UA/assets/74768806/030d8ce3-3e55-46d0-9549-6afa5f5661a1)
 
-### IN PROGRESS:
+---
+
+### Progression:
 
 Done:
 - ~~A*search algorithm~~
