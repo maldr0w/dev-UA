@@ -1,13 +1,34 @@
 # dev-UA - Development of Uartic project
 ### Description and motivations:
 - This project is part of a summer job at UIT
-- Creating a program that find the most time and cost efficient pathing for boats travelling in the artic region
+- Creating a program that find the most time and cost efficient pathing for ships travelling in the artic region
 - Pathing is based on:
-	- Ice thickness: boats can pass through ice thicker than 2.1 meters (source)
+	- Ice thickness: ships cannot pass through ice thicker than 2.1 meters (source)
  	- Fuel consumption and CO2 emission: _WIP_
    	- Shortest, most reliable route
    	- _more to come..._
+
+
+### IN PROGRESS:
+
+Done:
+- ~~A*search algorithm~~
+- ~~Path point reduction~~
+- ~~Graphing noise map + path lines~~
+- ~~Plot Sea ice dataset onto geographical map of North pole~~
+
+Currently working on:
+- Apply A* algorithm to real sea ice dataset
+- Create a pathing that works with latitude and longitude coordinate system 
+- etc...
+
+Further down the line:
+- Implement everything to work together in a single program
+- Working with cost efficiency, Co2 emission and fuel consumption
+- Create UI (maybe...)
+- etc...
 ---
+
 # Parts:
 
 ### A* Search Algorithm (A Star) 
@@ -33,42 +54,21 @@ Graph traversal and path searching algorithm
 ##### f-score:
 - f-score is the sum of the g-score and h-score, it takes the whole path via a specific node to the end point into account. The algorithm will favor paths that strike a cost balance between the initial cost (g-score) and estimated remaining cost (h-score).
 
+
+
 ---
 
-## Current outcome:
-- A* produces a optimal path
+## Developed so far:
+
+#### Created A* and noisemap:
+- A* produces a optimal path for 2D datasets
 - Using path and random noisemap to draw a nice picture:
 
-![image](https://github.com/maldr0w/dev-UA/assets/74768806/b7f22d4d-a8fd-48b4-bc82-e7059939baf9)
-
-
-
+	<img src="https://github.com/maldr0w/dev-UA/assets/74768806/b7f22d4d-a8fd-48b4-bc82-e7059939baf9" width="400">
 
 #### Started working with datasets:
+- I have managed to extract sea ice data from [data sets](https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-sea-ice-thickness?tab=overview) using netcdf
+- Mapped geographic coordinate system of the north pole (using cartopy) to display sea ice and later pathing for routes along the Northeast Passage
 
-![image](https://github.com/maldr0w/dev-UA/assets/74768806/65f0b265-8647-4e7f-89f6-0fd66a9dcb0c)
+	<img src="https://github.com/maldr0w/dev-UA/assets/74768806/fa8c266e-68c0-4f42-8f04-790ed1f4b96f" width="500">
 
-
-
-
-
-
-### To develope:
-
-Done:
-- ~~A*search algorithm~~
-- ~~Path point reduction~~
-- ~~Graphing map + path lines~~
-  
-To do:
-- Make sea ice dataset workable
-- Apply A* algorithm to real sea ice dataset
-- Map pathing onto polar coordinates 
-- etc...
-
-Further down:
-- Implement everything to work together in a single program
-- Working with cost efficiency, Co2 emission and fuel consumption
-- Create UI (maybe...)
-- etc...
----
