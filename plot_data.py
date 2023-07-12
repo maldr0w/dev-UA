@@ -35,7 +35,7 @@ def scatter_plot(): # Creating map of north pole
     ax.add_feature(cp.feature.LAND, edgecolor='black', zorder=1)
     ax.set_facecolor((1.0,1.0,1.0))
     ax.set_extent([-180,180,90,66], cp.crs.PlateCarree())
-    
+
     ax.gridlines(draw_labels=True, alpha=0.5,color='gray', 
                  linestyle='-', linewidth=0.5, 
                  xlocs=np.arange(-180, 181, 30),
@@ -47,6 +47,10 @@ def scatter_plot(): # Creating map of north pole
     
     cbar = plt.colorbar(sc, ax=ax, orientation='vertical')
     
+    plt.show()
+
+
+ # def contourmap:   
     # # contourmap:
     # ice_thickness = np.ma.masked_invalid(ice_thickness)
     # ice_mask = ice_thickness <= 0 
@@ -58,12 +62,12 @@ def scatter_plot(): # Creating map of north pole
     #                       levels=levels, cmap='jet', transform=cp.crs.PlateCarree())
     
     # cbar = plt.colorbar(contour, ax=ax)
-    
-    plt.show()
 
 
 
 # run functions:
+
 # plot()
+
 scatter_plot()
 
