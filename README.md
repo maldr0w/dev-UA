@@ -1,38 +1,21 @@
 # dev-UA - Development of Uartic project
-### Description and motivations:
+## Description and motivations:
 - This project is part of a summer job at UIT
-- The goal is to create a program that find the most time and cost efficient pathing for ships travelling in the artic region
-- Pathing is based on:
+- The goal is to create a program that find the most time and cost efficient pathing for ships travelling in the arctic region
+- The pathing is ultimately based on cost efficiency which will depend on the following variables:
 	- Ice thickness: ships cannot pass through ice thicker than 2.1 meters (source)
- 	- Fuel consumption and CO2 emission: _WIP_
-   	- Shortest, most reliable route
+ 	- Fuel consumption and CO2 emission
+   	- Route reliability
    	- _more to come..._
-
+- Currently we are only considering the Northeast Passage, as the Northwest Passage is too coarse
+- Illustration:
+  
 	![image](https://github.com/maldr0w/dev-UA/assets/74768806/030d8ce3-3e55-46d0-9549-6afa5f5661a1)
+  
 
 ---
 
-### Progression:
-
-Done:
-- ~~A*search algorithm~~
-- ~~Path point reduction~~
-- ~~Graphing noise map + path lines~~
-- ~~Plot Sea ice dataset onto geographical map of North pole~~
-
-Currently working on:
-- Apply A* algorithm to real sea ice dataset
-- Create a pathing that works with latitude and longitude coordinate system 
-- etc...
-
-Further down the line:
-- Implement everything to work together in a single program
-- Working with cost efficiency, Co2 emission and fuel consumption
-- Create UI (maybe...)
-- etc...
----
-
-# Parts:
+## Parts:
 
 ### A* Search Algorithm (A Star) 
 Graph traversal and path searching algorithm
@@ -59,6 +42,19 @@ Graph traversal and path searching algorithm
 
 
 
+
+### Sea Ice Datasets
+For data analysis I have opted to use monthly gridded ice thickness data sets.
+The data covers a grid resolution of 25km (1-10km true spatial resolution)
+The datasets are imported and extracted using NETCDF resulting in usable arrays of ice thickness with corresponding longitude and latitudes
+
+When applying the data one must consider data projection:
+- Using North Polar Sterographic projection (EPSG:3413) we set the domain to be centred at the North Pole
+- With WGS84 bounds of (-180.0, 180) longitude and (60,90) latitude
+
+
+
+
 ---
 
 ## Developed so far:
@@ -75,3 +71,4 @@ Graph traversal and path searching algorithm
 
 	<img src="https://github.com/maldr0w/dev-UA/assets/74768806/fa8c266e-68c0-4f42-8f04-790ed1f4b96f" width="500">
 
+---
