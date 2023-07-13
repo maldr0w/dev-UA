@@ -52,6 +52,7 @@ When applying the data one must consider data projection:
 - Using North Polar Sterographic projection (EPSG:3413) we set the domain to be centred at the North Pole
 - With WGS84 bounds of (-180.0, 180) longitude and (60,90) latitude
 
+- Lambert Azimuthal Equal Area (EASE-Grid version 2.0) centred over the North Pole
 
 
 
@@ -70,5 +71,11 @@ When applying the data one must consider data projection:
 - Mapped geographic coordinate system of the north pole (using cartopy) to display sea ice and later pathing for routes along the Northeast Passage
 
 	<img src="https://github.com/maldr0w/dev-UA/assets/74768806/fa8c266e-68c0-4f42-8f04-790ed1f4b96f" width="500">
+
+- Further, I want to map the data values onto a grid that I can apply the A* algorithm on
+	- It's more convenient to work with a grid in meters rather than degrees as A* operates in continuous space with metric distance function.
+	- thus I transform latitude longitude to a map projection that preserves distances. (center of north pole) 
+
+
 
 ---
