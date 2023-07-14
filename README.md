@@ -1,4 +1,4 @@
-# dev-UA - Development of Uartic project
+# dev-UA - Development of Uarctic project
 ## Description and motivations:
 - This project is part of a summer job at UIT
 - The goal is to create a program that find the most time and cost efficient pathing for ships travelling in the arctic region
@@ -65,6 +65,7 @@ When applying the data one must consider data projection:
 - Using path and random noisemap to draw a nice picture:
 
 	<img src="https://github.com/maldr0w/dev-UA/assets/74768806/b7f22d4d-a8fd-48b4-bc82-e7059939baf9" width="400">
+
 
 #### Started working with datasets:
 - I have managed to extract sea ice data from [data sets](https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-sea-ice-thickness?tab=overview) using netcdf
