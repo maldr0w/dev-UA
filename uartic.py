@@ -4,7 +4,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from asearch import a_star_search
+from a_star import a_star_search
 from noisemap import noisemap
 
 def reduce_path(path):
