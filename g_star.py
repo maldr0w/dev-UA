@@ -9,12 +9,22 @@
 # 
 import cartopy as cp
 import numpy as np
+import pyproj
+import shapely.geometry
+
 from load_dataset import longitude, latitude, ice_thickness
+
+# g_star.py - UIT - Martin Stave - mvrtinstave@gmail.com
+# inititates and runs the A* algorithm on sea ice thickness dataset
+
+
+
+
 
 # move to load_dataset
 longitude = longitude.flatten()
 latitude = latitude.flatten()
-ice_thickness = np.nan_to_num(ice_thickness) # turn nan values to 0
+ice_thickness = np.nan_to_num(ice_thickness)  # turn nan values to 0
 ###################
 
 # https://stackoverflow.com/questions/40342355/how-can-i-generate-a-regular-geographic-grid-using-python
@@ -22,56 +32,32 @@ ice_thickness = np.nan_to_num(ice_thickness) # turn nan values to 0
 
 
 
+# initializing transformation of coordinate systems
+proxy_transformer = pyproj.Transformer.from_crs('epsg:4326','epsg:3857')
+original_transformer = pyproj.Transformer.from_crs('epsg:3857','epsg:4326')
 
-# Grid in degrees
+# set up coordinates
 
-# step_size_km = 25
-# conversion_factor_lat  = 111.32
-# conversion_factor_lon = 110.57*np.cos(latitude)
+# coords = np.stack(longitude, latitude)
 
-# delta_degree_lat = step_size_km / conversion_factor_lat
-
-
-
-# print(np.max(longitude))
-# print(np.min(longitude))
-
-# projection = cp.crs.NorthPolarStereo()
-
-# print(projection)
+# print(coords)
 
 
+stepsize = 5000  # 5km grid resolution
+
+# transform corners to projection
 
 
-# ESRI:102018 North Pole Stereographic
-# https://epsg.io/102018
-# EPSG:3575
+# iterate over 2D area
+# grid = []
+# x = transformed_sw[0]
+# while x <transformed_ne[0]:
+#     y = transformed_sw[1]
+#     while y < transformed_ne[1]:
+#         p = shapely.geometry.Point(original_transformer.transform(x,y))
+#         grid.append(p)
+#         y+= stepsize
+#     x+= stepsize
 
-import shapely.geometry
-import pyproj
-
-# lon_min, lon_max = -180, 180
-# lat_min, lat_max = 60, 90
-
-# #corners
-# sw = shapely.geometry.Point((lon_min,lat_min))
-# ne = shapely.geometry.Point((lon_max,lat_max))
-
-# stepsize = 25000 # 25000 km grid resolution
-
-
-# gridpoints = []
-# x = sw[0]
-# while x < ne[0]:
-#     y = sw[1]
-#     while y < ne[1]:
-#         p = shapely.geometry.Point()
-
-
-
-import matplotlib.pyplot as plt
-
-plt.imshow(ice_thickness,cmap = 'jet')
-plt.show()
 
 
