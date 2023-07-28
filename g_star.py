@@ -19,12 +19,62 @@ from load_dataset import longitude, latitude, ice_thickness
 
 
 
+# mecator projection - meters
+# square divided in x and y axis
 
 
 # move to load_dataset
 longitude = longitude.flatten()
 latitude = latitude.flatten()
 ice_thickness = np.nan_to_num(ice_thickness)  # turn nan values to 0
+
+# print(longitude)
+# print(latitude)
+
+# print(max(longitude), min(longitude))
+# print(max(latitude), min(latitude))
+
+def LatlonToMeters(lat,lon):
+    mx = lon/180 * 20037508.34  # 20 million meters
+
+    my = np.log(np.tan((90+latitude)*np.pi/360))/(np.pi/180)
+    my = my* 20037508.34 / 180
+
+    return mx, my
+
+
+
+t = LatlonToMeters(latitude,longitude)
+
+print(t)
+
+
+
+
+https://github.com/mehrdadn/SOTA-Py/tree/master
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ###################
 
 # https://stackoverflow.com/questions/40342355/how-can-i-generate-a-regular-geographic-grid-using-python
@@ -33,7 +83,7 @@ ice_thickness = np.nan_to_num(ice_thickness)  # turn nan values to 0
 
 
 # initializing transformation of coordinate systems
-proxy_transformer = pyproj.Transformer.from_crs('epsg:4326','epsg:3857')
+proxy_transformer = pyproj.Transformer.from_crs('epsg:4326','epsg:3857')  # transforming from lat, lon to meters
 original_transformer = pyproj.Transformer.from_crs('epsg:3857','epsg:4326')
 
 # set up coordinates
@@ -58,6 +108,9 @@ stepsize = 5000  # 5km grid resolution
 #         grid.append(p)
 #         y+= stepsize
 #     x+= stepsize
+
+
+
 
 
 
