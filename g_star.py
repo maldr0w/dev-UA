@@ -42,16 +42,17 @@ def LatlonToMeters(lat,lon):
 
     return mx, my
 
-
-
 t = LatlonToMeters(latitude,longitude)
 
-print(t)
+# print(t)
+
+mx = np.ma.masked_invalid(t)
+# print(repr(mx))
+print(mx)
+print(mx[0][0]+mx[1][0])
 
 
-
-
-https://github.com/mehrdadn/SOTA-Py/tree/master
+# https://github.com/mehrdadn/SOTA-Py/tree/master
 
 
 
