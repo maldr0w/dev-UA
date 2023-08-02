@@ -5,8 +5,8 @@ from pyproj import Proj, transform
 import numpy as np
 import rasterio
 
-# 
-
+# make_grid.py - UIT - Martin Stave - Mvrtinstave@gmail.com
+# collects data and transforms lat/lon to meters in a grid 
 
 # reading the netCDF file
 filename = 'ice_thickness_2021.nc'
