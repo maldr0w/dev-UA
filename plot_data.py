@@ -83,6 +83,6 @@ def scatter_plot():
 
 
 # run functions:
-# color_plot()
-scatter_plot()
+color_plot()
+# scatter_plot()
 
