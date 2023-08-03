@@ -4,124 +4,142 @@ import xarray as xr
 import pandas as pd
 import matplotlib.pyplot as plt
 import pyproj
+
 # g_star.py - UIT - Martin Stave - mvrtinstave@gmail.com
-# currently creating spaced grid using ice thickness dataset
+# applying A* algorithm on grid of the Arctic
 
 
 '''
 plan:
-create an algorithm for pathing in the artic
+create an algorithm for pathing in the arctic
 get array of coordinates, figure out which is the best path A*
 - use ice index to navigate
 - globle land mask to navigate
    
     '''
 
-# access dataset within nc file 
-file_name = 'ice_thickness_2021.nc'
-
-# loading datafile into xarray dataset
-ds = xr.open_dataset(file_name)
-print(ds.attrs)  # get files attributes, 
-
-# dataset has EPSG:6931 projection which usually has units in meters
-# but the coordinate units are in degrees, which is weird
-
-# converting the dataarrays to pandas dataframe
-lat = ds['lat'].to_pandas()
-lon = ds['lon'].to_pandas()
-ice_thickness = ds['sea_ice_thickness'].isel(time=0).to_pandas()  # with specified dimensions 
+from make_grid import zoomed_grid, proj_latlon, proj_polar_stereo, proj_transform
+from global_land_mask import globe
 
 
-lon = np.ravel(lon)
-lat = np.ravel(lat)
-ice_thickness = np.ravel(ice_thickness)  # flattening ice thickness to 1D array
-ice_thickness = np.nan_to_num(ice_thickness)  # turn nan values to 0
+def heuristic(node,goal):
+    '''
+    heuristic estimate (Manhatten distance)
+    estimate of distance between specified node and goal node
+        '''
+    x1, y1 = node
+    x2, y2 = goal
+    estimated_distance = abs(x2 - x1) + abs(y2 - y1)    
+    return estimated_distance
 
 
-wgs84 = pyproj.CRS('EPSG:4326')  # WGS84 is world geodetic system, in degrees
-arctic_meter_proj = pyproj.CRS('EPSG:6931')  # EPSG:6931 is a meter-based system suitable for Arctic regions
-
-# defining transformer
-transformer = pyproj.Transformer.from_crs(wgs84, arctic_meter_proj)
-
-# Transforming a single point
-lon_sample, lat_sample = lon[0], lat[0]
-lon_transformed_sample, lat_transformed_sample = transformer.transform(lon_sample, lat_sample)
-# print("Transformed coordinates sample:", lon_transformed_sample, lat_transformed_sample)
-
+def reconstruct_path(current_node, came_from): 
+    '''
+    returns reconstructed path as a list of nodes from start node to goal node
+    by iterating over visited nodes from the came_from set
+        '''
+    path = [current_node]  # initializing with the current_node
+    while current_node in came_from:  # set iteration
+        current_node = came_from[current_node]  # assign current node to the node it came from
+        path.insert(0,current_node)  # insert current node at the front of the path list
+    return path
     
-# transforming coordinates
-lon_transformed, lat_transformed = transformer.transform(lon, lat)
+    
+def get_neighbors(node):
+    '''
+    returns a list of adjacent nodes to the arg node
+        '''
+    neighbors = []  # create empty list
+    x, y = node  # get node coordinates
 
-# defining grid spacing, original grid is 25km
-lon_span = lon_transformed.max() - lon_transformed.min()  # computing spans (total range of lon and lat values)
-lat_span = lat_transformed.max() - lat_transformed.min()  # in meters (as stereographic projection is in meters)
-
-# print(lon_span)
-# print(lat_span)
-
-
-grid_spacing = 25000  # 25km, could be changed...
-
-
-# print("lon_span:", lon_span)
-# print("lat_span:", lat_span)
-# print("grid_spacing:", grid_spacing)
-# print("lon_span / grid_spacing:", lon_span / grid_spacing)
-# print("lat_span / grid_spacing:", lat_span / grid_spacing)
-# print("Transformed coordinates sample:", lon_transformed[:10], lat_transformed[:10])
+    # add node neighbors adding and removing 1 to each parameter
+    neighbors.append((x,y+1))  # up 
+    neighbors.append((x,y-1))  # down 
+    neighbors.append((x+1,y))  # right 
+    neighbors.append((x-1,y))  # left 
+    
+    return neighbors
 
 
-# computing equivalent bins for each dimension
-num_bins_lon = np.ceil(lon_span / grid_spacing).astype(int)  # lon_span/grid_space = how many 25km bins can fit in total lon range
-num_bins_lat = np.ceil(lat_span / grid_spacing).astype(int)  # np.ceil rounds up to nearest whole number, as integer. adjust max or min for more accurate bin
+def cost_between(node1,node2):
+    '''
+    returns more accurate cost estimate between nodes 
+    based on the euclidean distance between nodes
+        '''
+    cost = 0
+    x1, y1 = node1
+    x2, y2 = node2
+    cost = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5  # euclidean distance
+    
+    return cost
 
 
-# print("num_bins_lon:", num_bins_lon)
-# print("num_bins_lat:", num_bins_lat)
-
-
-# print("num_bins_lon:", num_bins_lon)
-# print("num_bins_lat:", num_bins_lat)
-
-
-# combining variables into one datafram
-df = pd.DataFrame({
-    'lon': lon_transformed,
-    'lat': lat_transformed,
-    'ice_thickness': ice_thickness
-})
-
-
-# defining bin edges
-lon_bins = np.linspace(df['lon'].min(), df['lon'].max(), num_bins_lon + 1)
-lat_bins = np.linspace(df['lat'].min(), df['lat'].max(), num_bins_lat + 1)
-
-# assigning each point to a bin (grid cell)
-df['lon_bin'] = pd.cut(df['lon'], bins = lon_bins, labels = False, include_lowest=True)
-df['lat_bin'] = pd.cut(df['lat'], bins = lat_bins, labels = False, include_lowest=True)
-
-# creating a 2D array for ice thickness based on bins
-ice_thickness_grid = df.groupby(['lon_bin','lat_bin'])['ice_thickness'].mean().unstack().values
-
-
-# testing the grid
-# plt.figure(figsize=(10,10))
-# plt.imshow(ice_thickness_grid, origin='lower')
-# plt.colorbar(label='Ice Thickness')
-# plt.title('Ice Thickness grid')
-# plt.show()
-
-
-# print(ice_thickness_grid)
+# input lat lon, coordinates 
+# map = metered grid
+# convert lat lon to closest node point in lat lon dataset node to meter node
+# proceed
+def g_star_search(start, goal, map):
+    ''' main function
+    returns the most optimal path from the predefined start node to the goal node
+    nodes within the path are chosen based on cost balance
+        '''
+    
+    
 
 
 
+    # initializing sets
+    open_set = {start}  # open set will hold explorable nodes, set = unordered list
+    closed_set = set()  # empty set, for already explored nodes
+    came_from = {}  # empty dict, to store parent nodes  
+    
+    gscore = {start: 0}  # gscore is the cost from start node to each node, start is keyed 0
+    fscore = {start: heuristic(start, goal)} # estimated total cost from start to goal via each node
+
+    while open_set:  # while there are available nodes
+
+        # set current node to the node with smalles fscore in open_set
+        # the node with the smallest fscore will have the lowest total cost to reach the goal node
+        current_node = min(open_set, key=lambda node: fscore[node])
+        
+        if current_node == goal:  # check wether we are at goal node
+            return reconstruct_path(current_node, came_from)
+
+        # when lowest f-score has been found
+        open_set.remove(current_node)  # remove the node from set of possible nodes
+        closed_set.add(current_node)  # add the node to set of already explored nodes 
+
+        for neighbor in get_neighbors(current_node):  # loop over current nodes neighbors
+            if neighbor in closed_set:  # if a neighbor has already been explored we move on to the next neighbor
+                continue
+
+            # sea ice thickness specification
+            if map[neighbor[0]][neighbor[1]] > 2:  # ignore nodes with values higher than 2
+                continue
+
+            # land specification (based on globe module)
+            # if globe.is_land(neighbor): # check wether a neighbor is on land
+            #     continue
+
+            # adding gscore (cost) from start to current_node and cost between current node and neighbor
+            # this score is tentative as it will change if a better path to the neighbor node is found later in the search
+            tentative_gscore = gscore[current_node] + cost_between(current_node, neighbor)
+
+            # check if neighbor has been explored
+            # if the tentative score is less than real gscore, new score is more optimal 
+            # smaller gscore = closer to start along current path, larger = path cost is larger
+            if neighbor not in open_set or tentative_gscore < gscore[neighbor]:
+                
+                came_from[neighbor] = current_node  # set the current node as parent node
+                
+                gscore[neighbor] = tentative_gscore  # update gscore
+                fscore[neighbor] = tentative_gscore + heuristic(neighbor, goal)  # total cost from start to goal via this path (via neighbor)
+
+                if neighbor not in open_set:  # if this neighbor has not been explored 
+                    open_set.add(neighbor)  # add to set of explorable nodes
 
 
-
-
+    return None  # if no path has been found return None     
 
 
 

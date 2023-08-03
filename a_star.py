@@ -14,12 +14,9 @@ def heuristic(node,goal):
     heuristic estimate (Manhatten distance)
     estimate of distance between specified node and goal node
         '''
-    
     x1, y1 = node
     x2, y2 = goal
-
     estimated_distance = abs(x2 - x1) + abs(y2 - y1)    
-    
     return estimated_distance
 
 
@@ -28,13 +25,10 @@ def reconstruct_path(current_node, came_from):
     returns reconstructed path as a list of nodes from start node to goal node
     by iterating over visited nodes from the came_from set
         '''
-    
     path = [current_node]  # initializing with the current_node
-    
     while current_node in came_from:  # set iteration
         current_node = came_from[current_node]  # assign current node to the node it came from
         path.insert(0,current_node)  # insert current node at the front of the path list
-    
     return path
     
     
@@ -42,7 +36,6 @@ def get_neighbors(node):
     '''
     returns a list of adjacent nodes to the arg node
         '''
-    
     neighbors = []  # create empty list
     x, y = node  # get node coordinates
 
@@ -60,11 +53,9 @@ def cost_between(node1,node2):
     returns more accurate cost estimate between nodes 
     based on the euclidean distance between nodes
         '''
-    
     cost = 0
     x1, y1 = node1
     x2, y2 = node2
-    
     cost = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5  # euclidean distance
     
     return cost
