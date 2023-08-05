@@ -16,7 +16,6 @@ ds = xr.open_dataset(file_name)
 ice_thickness = ds['sea_ice_thickness'][0,:].values
 ice_thickness = np.nan_to_num(ice_thickness)
 
-
 # defining coordinate refrence systems
 latlon_crs = CRS(proj='latlong', datum='WGS84')  # Lat/Lon projection (degrees)
 stereo_crs = CRS('EPSG:32661')  # North Polar Stereographic projection (meters)
@@ -47,26 +46,27 @@ raster_transform = from_origin(xmin, ymax, resolution, resolution)
 # initializing grid with zeros
 ice_thickness_grid = np.zeros((n_rows, n_cols))
 
-# populating the grid
 # iterating over all the points in the 2D ice_thickness grid
 for i in range(ice_thickness.shape[0]):
     for j in range(ice_thickness.shape[1]):
-
         # extracting corresponding geographic coordinates (in meters) for each point
         x, y = lon_m[i, j], lat_m[i, j]
-        
         # applying inverse raster transform, transforming geographic coordinates to pixel coordinates
         row, col = ~raster_transform * (x,y)
         row, col = int(row), int(col)  # converting from float back to integer
-        
         try:
             # assigning current ice thickness to correct cell in the grid
             ice_thickness_grid[row, col] = ice_thickness[i, j]
-        
         except IndexError:
-        
             print(f'Error with i={i}, j={j}, row={row}, col={col}')
             break
 
 # print(ice_thickness_grid)
 
+
+# plotting the grid
+plt.figure(figsize=(10,10))
+plt.imshow(ice_thickness_grid,cmap='jet', origin='lower')
+plt.colorbar(label='Ice Thickness')
+plt.title('Ice Thickness grid')
+plt.show()
