@@ -78,24 +78,26 @@ ice_thickness_at_point = ice_thickness_grid[index]
 
 print(nearest_lat)
 print(nearest_lon)
-
 print(ice_thickness_at_point)
 
+# Transform nearest latitude and longitude into meters
 nearest_lon_m, nearest_lat_m = proj_transform(proj_latlon, proj_polar_stereo, nearest_lon, nearest_lat)
-
 print(nearest_lon_m, nearest_lat_m)
 
-# lon_d, lat_d = proj_transform(proj_polar_stereo, proj_latlon, lon_m, lat_m)
-
+# Transform back:
+lon_d, lat_d = proj_transform(proj_polar_stereo, proj_latlon, nearest_lon_m, nearest_lat_m)
+print(f"lon_d:{lon_d},lat_d:{ lat_d}")
 
 # step_size = np.diff(zoomed_grid)
 # average_step_size = np.mean(step_size)
 # print(average_step_size)
-col = (nearest_lon_m -xmin) / resolution
+col = (nearest_lon_m - xmin) / resolution
 row = (nearest_lat_m - ymin) / resolution
 
 col = int(col)
 row = int(row)
+
+# col,row = ~raster_transform * (col,row)
 
 print(f"Grid coordinates: {col}, {row}")
 # cols, rows = ice_thickness_grid.shape
