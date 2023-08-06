@@ -66,7 +66,46 @@ for i in range(ice_thickness.shape[0]):
 
 # plotting the grid
 plt.figure(figsize=(10,10))
-plt.imshow(ice_thickness_grid,cmap='jet', origin='lower')
+# plt.imshow(ice_thickness_grid,cmap='jet',origin='lower')
+plt.imshow(ice_thickness_grid, cmap='jet')
 plt.colorbar(label='Ice Thickness')
 plt.title('Ice Thickness grid')
+# plt.show()
+
+
+
+# testing point mapping
+lat_point = 74.877
+lon_point = 9.359
+
+# transforming points to meters
+lon_point_m, lat_point_m = transformer_m.transform(lon_point,lat_point)
+# print(lon_point_m, lat_point_m)
+
+# compute difference between grid points and transformed point
+diff_array_m = np.sqrt((lat_m - lat_point_m)**2 + (lon_m - lon_point_m)**2)
+# print(diff_array)
+
+# find index of grid point with smallest difference
+index_m = np.unravel_index(np.argmin(diff_array_m, axis=None), diff_array_m.shape)
+
+# for visual confirmation, obtaining nearest lat/lon
+nearest_lat = ds['lat'].values[index_m]
+nearest_lon = ds['lon'].values[index_m]
+print(nearest_lat)
+print(nearest_lon)
+
+# get row/col indices for this point
+lon_point_r, lat_point_r = ~raster_transform * (lon_point_m, lat_point_m)
+lon_point_r, lat_point_r = int(lon_point_r), int(lat_point_r)
+# print(row, col)
+
+# exctracting ice thickness at that point
+ice_thickness_at_point = ice_thickness_grid[lon_point_r, lat_point_r]
+# print(ice_thickness_at_point)
+
+# print(f'nearest lat: {nearest_lat}, nearest lon: {nearest_lon}')
+# print(f'ice thickness at this point: {ice_thickness_at_point}')
+
+plt.plot(lon_point_r,lat_point_r, 'ro')
 plt.show()
