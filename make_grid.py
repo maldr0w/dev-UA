@@ -107,10 +107,13 @@ def plot_grid(grid, point_x, point_y):
     plt.colorbar(label='Ice Thickness')
     plt.title('Ice Thickness grid')
 
+    plt.xlim(100,450)
+    plt.ylim(100,450)
+    
     plt.plot(point_x,point_y, 'ro')
     plt.show()
 
-# plot_grid(ice_thickness_grid, lon_point_p, lat_point_p)
+plot_grid(ice_thickness_grid, lon_point_p, lat_point_p)
 
 
 
