@@ -72,11 +72,25 @@ When applying the data one must consider data projection:
 - Mapped geographic coordinate system of the north pole (using cartopy) to display sea ice and later pathing for routes along the Northeast Passage
 
 	<img src="https://github.com/maldr0w/dev-UA/assets/74768806/fa8c266e-68c0-4f42-8f04-790ed1f4b96f" width="500">
-
+ 
 - Further, I want to map the data values onto a grid that I can apply the A* algorithm on
-	- It's more convenient to work with a grid in meters rather than degrees as A* operates in continuous space with metric distance function.
-	- thus I transform latitude longitude to a map projection that preserves distances. (center of north pole) 
+- thus I transform latitude longitude to a map projection that preserves distances. (center of north pole) 
 
+### Update: (see make_grid.py file)
+- Managed to extract sea ice thickness data and converted datapoints into a pixel grid in meters, this is done by:
+	- Transforming the datasets projection into North Pole Stereographic projection, which is centered around the North Pole and has units in meters
+  	- Converting geographic coordinates into pixel coordinates for mapping later
+  	- It's more convenient to work with a grid in meters rather than degrees as A* operates in continuous space with metric distance function.
 
+- I've also made sure the transformation works by converting a single point (74.877N, 9.359E) and plotting it onto the grid:
+- The graph is oriented 90 degrees to the right, but this only has visual impacts, nothing to worry about.
+  
+	<img src="https://github.com/maldr0w/dev-UA/assets/74768806/7840136f-66a5-40ca-a6b6-4a9406667670" width="400">
 
+- Consulting the [reference map](https://data.marine.copernicus.eu/viewer/expert?view=viewer&crs=epsg%3A32661&t=1686830400000&z=0&center=2.6568731950420577e-13%2C85.4797788534361&zoom=11.852162613743667&layers=W3siaWQiOiJjMCIsIm9wYWNpdHkiOjEsImxheWVySWQiOiJBUkNUSUNfQU5BTFlTSVNfRk9SRUNBU1RfUEhZU18wMDJfMDAxX2EvY21lbXNfbW9kX2FyY19waHlfYW5mY190b3BhejRfUDFNLW1fMjAyMjExL2FsYmVkbyIsImxvZ1NjYWxlIjp0cnVlfV0%3D&objects=W3siaWQiOiJjMiIsImNycyI6ImVwc2c6MzI2NjEiLCJjb21wbGV0ZSI6dHJ1ZSwiZ3JhcGhJZHMiOlsiQVJDVElDX0FOQUxZU0lTX0ZPUkVDQVNUX1BIWVNfMDAyXzAwMV9hL2NtZW1zX21vZF9hcmNfcGh5X2FuZmNfdG9wYXo0X1AxTS1tXzIwMjIxMS9hbGJlZG8vL3YodCkiXSwidHlwZSI6InBvaSIsImNvb3JkcyI6WzkuMzU5MzQ3NjI5NzQzNjU0LDc0Ljg3Njk1MDE1NTg0NDI4XSwicGluT2Zmc2V0IjpbNjUsMF19XQ%3D%3D&basemap=dark) I am using, we can see that the point I mapped in the plot above aligns perfectly with what we are expecting
+
+   	<img src="https://github.com/maldr0w/dev-UA/assets/74768806/bb6444dd-6c0e-43bd-a432-d803a31be69a" width="400">
+
+- Now that I have a working grid, I can safely move on to further developing the A* algorithm on this grid.
+- _To be continued..._
 ---
