@@ -5,6 +5,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import pyproj
 
+from make_grid import ice_thickness_grid, transformer_m, transformer_d, raster_transform, ds, transform_point
+from global_land_mask import globe
+
 # g_star.py - UIT - Martin Stave - mvrtinstave@gmail.com
 # applying A* algorithm on grid of the Arctic
 
@@ -17,9 +20,6 @@ get array of coordinates, figure out which is the best path A*
 - globle land mask to navigate
    
     '''
-
-from make_grid import zoomed_grid, proj_latlon, proj_polar_stereo, proj_transform
-from global_land_mask import globe
 
 
 def heuristic(node,goal):
