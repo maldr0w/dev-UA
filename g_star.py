@@ -5,8 +5,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import pyproj
 
-from make_grid import ice_thickness_grid, transformer_m, transformer_d, raster_transform, ds, transform_point
+from make_grid import ice_thickness_grid, transformer_m, transformer_d, raster_transform, ds, transform_point, revert_point
 from global_land_mask import globe
+
+
 
 # g_star.py - UIT - Martin Stave - mvrtinstave@gmail.com
 # applying A* algorithm on grid of the Arctic
@@ -33,7 +35,7 @@ def heuristic(node,goal):
     return estimated_distance
 
 
-def reconstruct_path(current_node, came_from): 
+def reconstruct_path(current_node,came_from): 
     '''
     returns reconstructed path as a list of nodes from start node to goal node
     by iterating over visited nodes from the came_from set
@@ -74,18 +76,64 @@ def cost_between(node1,node2):
     return cost
 
 
+def reduce_path(path):
+    reduced_path = [path[0]]
+    last_point = None
+    next_point = None
+    
+    for i, point in enumerate(path):
+        if point in reduced_path:
+            continue
+        
+        if i < len(path) - 1:
+            next_point = path[i+1]
+            last_point = path[i-1]
+        
+        x,y = point
+        x_next, y_next = next_point
+        x_last, y_last = last_point
+
+        if x_last != x_next and y_last != y_next:
+            reduced_path.append(point)
+  
+    return reduced_path
+
+
+def draw_path(path, map): # drawing path on a given map
+    plt.imshow(map, cmap='gray',origin='lower', interpolation='nearest')
+    plt.plot(*zip(*path), color='red') # zip fixes this line somehow       
+    plt.show()
+
+
+
+
+
+
+
+
 # input lat lon, coordinates 
 # map = metered grid
 # convert lat lon to closest node point in lat lon dataset node to meter node
 # proceed
-def g_star_search(start, goal, map):
+def g_star_search(start_coordinate,goal_coordinate,grid):
     ''' main function
     returns the most optimal path from the predefined start node to the goal node
     nodes within the path are chosen based on cost balance
         '''
-    
-    
 
+    # defining lat and lon start and end points 
+    lat_start, lon_start = start_coordinate
+    lat_end, lon_end = goal_coordinate
+
+    # transforming start and end points into pixel coordinates
+    lon_start_point, lat_start_point = transform_point(lat_start,lon_start)
+    lon_end_point, lat_end_point = transform_point(lat_end,lon_end)   
+    
+    start = (lon_start_point, lat_start_point)
+    goal = (lon_end_point, lat_end_point)
+
+    # print(start)
+    # print(goal)
 
 
     # initializing sets
@@ -94,13 +142,17 @@ def g_star_search(start, goal, map):
     came_from = {}  # empty dict, to store parent nodes  
     
     gscore = {start: 0}  # gscore is the cost from start node to each node, start is keyed 0
-    fscore = {start: heuristic(start, goal)} # estimated total cost from start to goal via each node
+    fscore = {start: heuristic(start, goal)}  # estimated total cost from start to goal via each node
 
+    # print(fscore)
+    
     while open_set:  # while there are available nodes
 
         # set current node to the node with smalles fscore in open_set
         # the node with the smallest fscore will have the lowest total cost to reach the goal node
         current_node = min(open_set, key=lambda node: fscore[node])
+
+        # print(current_node)
         
         if current_node == goal:  # check wether we are at goal node
             return reconstruct_path(current_node, came_from)
@@ -114,12 +166,17 @@ def g_star_search(start, goal, map):
                 continue
 
             # sea ice thickness specification
-            if map[neighbor[0]][neighbor[1]] > 2:  # ignore nodes with values higher than 2
+            
+            if grid[neighbor[0]][neighbor[1]] > 2:  # ignore nodes with values higher than 2
                 continue
-
+            
+        
             # land specification (based on globe module)
-            # if globe.is_land(neighbor): # check wether a neighbor is on land
-            #     continue
+            lat, lon = revert_point(neighbor[0],neighbor[1])
+            # print(neighbor_latlon)
+            if globe.is_land(lat,lon): # check wether a neighbor is on land
+                # print('found land!')
+                continue
 
             # adding gscore (cost) from start to current_node and cost between current node and neighbor
             # this score is tentative as it will change if a better path to the neighbor node is found later in the search
@@ -142,11 +199,12 @@ def g_star_search(start, goal, map):
     return None  # if no path has been found return None     
 
 
+start_point = (72.305, 27.676)
+end_point = (67.259, 168.511)
 
+path = g_star_search(start_point, end_point, ice_thickness_grid)
 
-
-
-
+draw_path(path, ice_thickness_grid)
 
 
 

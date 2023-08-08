@@ -85,7 +85,23 @@ def transform_point(lat_point, lon_point):
     # extracting ice thickness at this point in grid
     ice_thickness_at_point = ice_thickness_grid[lat_point_p, lon_point_p]  # np.array follow row,col index order
     
-    return ice_thickness_at_point, lon_point_p, lat_point_p
+    return lon_point_p, lat_point_p
+
+
+def revert_point(lon_pixel,lat_pixel):
+    '''
+    transform pixel coordinates back to lat/lon coordinates    
+        '''
+    # convert pixel coordinates back to meters
+    lon_m, lat_m = raster_transform * (lon_pixel, lat_pixel)
+
+    # convert meters to degrees
+    lon, lat = transformer_d.transform(lon_m, lat_m)
+
+    return lat, lon
+
+
+
 
 
 file_name = 'ice_thickness_2021.nc'
@@ -97,23 +113,35 @@ ice_thickness_grid, transformer_m, transformer_d, lon_m, lat_m, raster_transform
 # testing point mapping
 lat_point = 74.877
 lon_point = 9.359
-ice_thickness, lon_point_p, lat_point_p = transform_point(lat_point, lon_point)
+lon_point_p, lat_point_p = transform_point(lat_point, lon_point)
+# print(lon_point_p, lat_point_p)
 
+lon, lat = revert_point(lon_point_p, lat_point_p)
+# print(lon,lat)
+
+
+# start_point = (72.305, 27.676)
+lat_end_p = 67.259, 
+lon_end_p = 168.511
+
+lon_end_p, lat_end_p = transform_point(lat_end_p, lon_end_p)
 # plotting the grid
 
-def plot_grid(grid, point_x, point_y):
-    plt.figure(figsize=(10,10))    
-    plt.imshow(grid,cmap='jet',origin='lower')
-    plt.colorbar(label='Ice Thickness')
-    plt.title('Ice Thickness grid')
+# def plot_grid(grid, point_x, point_y):
+#     plt.figure(figsize=(10,10))    
+#     plt.imshow(grid,cmap='jet',origin='lower')
+#     plt.colorbar(label='Ice Thickness')
+#     plt.title('Ice Thickness grid')
 
-    plt.xlim(100,450)
-    plt.ylim(100,450)
+#     plt.xlim(100,450)
+#     plt.ylim(100,450)
     
-    plt.plot(point_x,point_y, 'ro')
-    plt.show()
+#     plt.plot(point_x,point_y, 'ro')
+#     plt.plot(lon_end_p, lat_end_p, 'ro')
+      
+#     plt.show()
 
-plot_grid(ice_thickness_grid, lon_point_p, lat_point_p)
+# plot_grid(ice_thickness_grid, lon_point_p, lat_point_p)
 
 
 
