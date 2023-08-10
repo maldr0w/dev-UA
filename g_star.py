@@ -172,11 +172,11 @@ def g_star_search(start_coordinate,goal_coordinate,grid):
             
         
             # land specification (based on globe module)
-            lat, lon = revert_point(neighbor[0],neighbor[1])
+            # lat, lon = revert_point(neighbor[0],neighbor[1])
             # print(neighbor_latlon)
-            if globe.is_land(lat,lon): # check wether a neighbor is on land
+            # if globe.is_land(lat,lon): # check wether a neighbor is on land
                 # print('found land!')
-                continue
+                # continue
 
             # adding gscore (cost) from start to current_node and cost between current node and neighbor
             # this score is tentative as it will change if a better path to the neighbor node is found later in the search
