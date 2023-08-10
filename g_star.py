@@ -162,12 +162,15 @@ def g_star_search(start_coordinate,goal_coordinate,grid):
         closed_set.add(current_node)  # add the node to set of already explored nodes 
 
         for neighbor in get_neighbors(current_node):  # loop over current nodes neighbors
+            current_ice = grid[neighbor[0]][neighbor[1]]
+            
             if neighbor in closed_set:  # if a neighbor has already been explored we move on to the next neighbor
                 continue
 
             # sea ice thickness specification
             
-            if grid[neighbor[0]][neighbor[1]] > 2:  # ignore nodes with values higher than 2
+            if current_ice > 2:  # ignore nodes with values higher than 2
+                print(current_ice)
                 continue
             
         
