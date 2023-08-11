@@ -132,10 +132,6 @@ def g_star_search(start_coordinate,goal_coordinate,grid):
     start = (lon_start_point, lat_start_point)
     goal = (lon_end_point, lat_end_point)
 
-    # print(start)
-    # print(goal)
-
-
     # initializing sets
     open_set = {start}  # open set will hold explorable nodes, set = unordered list
     closed_set = set()  # empty set, for already explored nodes
@@ -143,16 +139,12 @@ def g_star_search(start_coordinate,goal_coordinate,grid):
     
     gscore = {start: 0}  # gscore is the cost from start node to each node, start is keyed 0
     fscore = {start: heuristic(start, goal)}  # estimated total cost from start to goal via each node
-
-    # print(fscore)
     
     while open_set:  # while there are available nodes
 
         # set current node to the node with smalles fscore in open_set
         # the node with the smallest fscore will have the lowest total cost to reach the goal node
         current_node = min(open_set, key=lambda node: fscore[node])
-
-        # print(current_node)
         
         if current_node == goal:  # check wether we are at goal node
             return reconstruct_path(current_node, came_from)
@@ -172,14 +164,6 @@ def g_star_search(start_coordinate,goal_coordinate,grid):
             if current_ice > 2:  # ignore nodes with values higher than 2
                 print(current_ice)
                 continue
-            
-        
-            # land specification (based on globe module)
-            # lat, lon = revert_point(neighbor[0],neighbor[1])
-            # print(neighbor_latlon)
-            # if globe.is_land(lat,lon): # check wether a neighbor is on land
-                # print('found land!')
-                # continue
 
             # adding gscore (cost) from start to current_node and cost between current node and neighbor
             # this score is tentative as it will change if a better path to the neighbor node is found later in the search
@@ -198,14 +182,24 @@ def g_star_search(start_coordinate,goal_coordinate,grid):
                 if neighbor not in open_set:  # if this neighbor has not been explored 
                     open_set.add(neighbor)  # add to set of explorable nodes
 
-
     return None  # if no path has been found return None     
-
 
 start_point = (72.305, 27.676)
 end_point = (67.259, 168.511)
 
+def pixel_vector_magnitude(x, y):
+   return np.sqrt((x * x) + (y * y))
+
+def pixel_length(path):
+   previous = path[0]
+   length = 0.0
+   for segment in path
+      length += pixel_vector_magnitude(segment[0], segment[1])
+   return length
+
 path = g_star_search(start_point, end_point, ice_thickness_grid)
+
+path_pixel_length = pixel_length(path)
 
 draw_path(path, ice_thickness_grid)
 
