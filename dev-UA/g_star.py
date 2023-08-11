@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pyproj
 
 
-from make_grid import ice_thickness_grid, transformer_m, transformer_d, raster_transform, ds, transform_point, revert_point
+from make_grid import ice_thickness_grid, transformer_m, transformer_d, raster_transform, ds, transform_point, revert_point, lon_m, lat_m
 from global_land_mask import globe
 
 
@@ -196,6 +196,12 @@ end_point = (67.259, 168.511)
 
 path = g_star_search(start_point, end_point, ice_thickness_grid)
 
-draw_path(path, ice_thickness_grid)
+# draw_path(path, ice_thickness_grid)
+# print(path)
+
+# for coord in path:
+    # print(ice_thickness_grid[coord[0], coord[1]])
 
 
+print(ice_thickness_grid.shape)
+print(lon_m.shape)
