@@ -5,11 +5,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import pyproj
 
-
 from make_grid import ice_thickness_grid, transformer_m, transformer_d, raster_transform, ds, transform_point, revert_point, lon_m, lat_m
 from global_land_mask import globe
-
-
 
 # main.py - UIT - Martin Stave - mvrtinstave@gmail.com
 # applying A* algorithm on a grid of the sea ice thickness @ North Pole
@@ -25,7 +22,6 @@ def heuristic(node,goal):
     estimated_distance = abs(x2 - x1) + abs(y2 - y1)    
     return estimated_distance
 
-
 def reconstruct_path(current_node,came_from): 
     '''
     returns reconstructed path as a list of nodes from start node to goal node
@@ -36,7 +32,6 @@ def reconstruct_path(current_node,came_from):
         current_node = came_from[current_node]  # assign current node to the node it came from
         path.insert(0,current_node)  # insert current node at the front of the path list
     return path
-    
     
 def get_neighbors(node, max_x, max_y):
     '''
@@ -57,7 +52,6 @@ def get_neighbors(node, max_x, max_y):
 
     return neighbors
 
-
 def cost_between(node1,node2):
     '''
     returns more accurate cost estimate between nodes 
@@ -69,7 +63,6 @@ def cost_between(node1,node2):
     cost = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5  # euclidean distance
     
     return cost
-
 
 def reduce_path(path):
     reduced_path = [path[0]]
@@ -93,14 +86,12 @@ def reduce_path(path):
   
     return reduced_path
 
-
 def draw_path(path, map): # drawing path on a given map
     # map = np.rot90(map,-1)
     # path = np.rot90(path,-1)
     plt.imshow(map, cmap='jet',origin='lower', interpolation='nearest')
     plt.plot(*zip(*path), color='red') # zip fixes this line somehow       
     plt.show()
-
 
 # input lat lon, coordinates 
 # map = metered grid
@@ -111,11 +102,16 @@ def g_star_search(start_coordinate,goal_coordinate,grid):
     returns the most optimal path from the predefined start node to the goal node
     nodes within the path are chosen based on cost balance
         '''
-
+    
     # defining lat and lon start and end points 
     lat_start, lon_start = start_coordinate
     lat_end, lon_end = goal_coordinate
 
+    
+    # check if input coordinates are on land
+    if globe.is_land(lat_start, lon_start):
+        print('starting point is on land!')
+    
     # transforming start and end points into pixel coordinates
     lon_start_point, lat_start_point = transform_point(lat_start,lon_start)
     lon_end_point, lat_end_point = transform_point(lat_end,lon_end)   
@@ -125,8 +121,7 @@ def g_star_search(start_coordinate,goal_coordinate,grid):
 
     # print(start)
     # print(goal)
-
-
+    
     # initializing sets
     open_set = {start}  # open set will hold explorable nodes, set = unordered list
     closed_set = set()  # empty set, for already explored nodes
@@ -191,17 +186,96 @@ def g_star_search(start_coordinate,goal_coordinate,grid):
     return None  # if no path has been found return None     
 
 
-start_point = (72.305, 27.676)
-end_point = (67.259, 168.511)
+# Defining start and end points
+start_point_1 = (72.305, 27.676)
+end_point_1 = (67.259, 168.511)
 
-path = g_star_search(start_point, end_point, ice_thickness_grid)
+start_point_2 = (71.711,60.062)
+end_point_2 = (67.259, 168.511)
+
+start_point_3 = (62.210,57.162)
+end_point_3 = (57.349,173.091)
+
+# initializing g_search
+path_1 = g_star_search(start_point_1,end_point_1,ice_thickness_grid)
+path_2 = g_star_search(start_point_2,end_point_2,ice_thickness_grid)
+path_3 = g_star_search(start_point_3,end_point_3,ice_thickness_grid)
 
 # draw_path(path, ice_thickness_grid)
-# print(path)
 
-# for coord in path:
-    # print(ice_thickness_grid[coord[0], coord[1]])
+resolution = 25000
 
 
-print(ice_thickness_grid.shape)
-print(lon_m.shape)
+def pixel_vector_magnitude(dx,dy,resolution):
+    '''
+    computes distance between two points in a grid
+    '''
+    if dx == 0:  # if change only in y direction
+        return abs(dy) * resolution
+    elif dy == 0:  # if change only in x direction
+        return abs(dx) * resolution
+    else:  # for any other path, diagonal or non-straight line
+        return np.sqrt((dx ** 2)+(dy ** 2)) * resolution  # euclidean distance, scaled by resolution
+
+def pixel_length(path):
+    '''
+    compute total path length based on distance per pixel (resolution)
+    '''
+    previous = path[0]
+    length = 0.0
+    # iterate over path, segment by segment
+    for segment in path[1:]:
+        # changes in x and y direction
+        dx = segment[0] - previous[0]
+        dy = segment[1] - previous[1]
+        # sum length of current segment to total length
+        length += pixel_vector_magnitude(dx, dy, resolution)
+        previous = segment  # set current point as previous for next iteration
+    return length
+
+path_1_length = pixel_length(path_1)
+path_2_length = pixel_length(path_2)
+path_3_length = pixel_length(path_3)
+
+# print(path_1_length)
+# print(path_2_length)
+# print(path_3_length)
+
+# plotting
+plt.figure().set_figwidth(15)
+plt.title("")
+
+zoom_amount = (150,400)
+
+plt.subplot(1, 3, 1)
+plt.title(f'start:{start_point_1}, end:{end_point_1}, dist: {path_1_length}', fontsize = 8)
+plt.imshow(ice_thickness_grid, cmap='jet',origin='lower', interpolation='nearest')
+plt.plot(*zip(*path_1), color='red', label = f'{start_point_1}') # zip fixes this line somehow   plt.title('E = 2')
+plt.xlim(zoom_amount)
+plt.ylim(zoom_amount)
+
+plt.subplot(1, 3, 2)
+plt.title(f'start:{start_point_2}, end:{end_point_2}, dist: {path_2_length}', fontsize = 8)
+plt.imshow(ice_thickness_grid, cmap='jet',origin='lower', interpolation='nearest')
+plt.plot(*zip(*path_2), color='red') # zip fixes this line somehow   plt.title('E = 2')
+plt.xlim(zoom_amount)
+plt.ylim(zoom_amount)
+
+plt.subplot(1, 3, 3)
+plt.title(f'start:{start_point_3}, end:{end_point_3}, dist: {path_3_length}', fontsize = 8)
+plt.imshow(ice_thickness_grid, cmap='jet',origin='lower', interpolation='nearest')
+plt.plot(*zip(*path_3), color='red') # zip fixes this line somehow   plt.title('E = 2')
+plt.xlim(zoom_amount)
+plt.ylim(zoom_amount)
+
+plt.show()
+
+
+
+
+
+
+
+
+
+

@@ -103,8 +103,6 @@ def revert_point(lon_pixel,lat_pixel):
 
 
 
-
-
 file_name = 'ice_thickness_2021.nc'
 resolution = 25000  # 25km
 
