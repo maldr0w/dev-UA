@@ -172,11 +172,11 @@ def g_star_search(start_coordinate,goal_coordinate,grid):
                 continue
             
             # land specification (based on globe module)
-            lon,lat = revert_point(neighbor[0],neighbor[1])
+            # lon,lat = revert_point(neighbor[0],neighbor[1])
             # print(lat,lon)
-            if globe.is_land(lat,lon): # check wether a neighbor is on land
+            # if globe.is_land(lat,lon): # check wether a neighbor is on land
                 # print('found land!')
-                continue
+                # continue
 
             # adding gscore (cost) from start to current_node and cost between current node and neighbor
             # this score is tentative as it will change if a better path to the neighbor node is found later in the search
@@ -246,20 +246,20 @@ path_3 = g_star_search(start_point_3,end_point_3,ice_thickness_grid)
 
 # draw_path(path, ice_thickness_grid)
 
-if path_1 is None:
-    print('path 1 is none')
-else:
-    path_1_length = pixel_length(path_1)
+# if path_1 is None:
+#     print('path 1 is none')
+# else:
+#     path_1_length = pixel_length(path_1)
     
-if path_2 is None:
-    print('path 2 is none')
-else: 
-    path_2_length = pixel_length(path_2)
+# if path_2 is None:
+#     print('path 2 is none')
+# else: 
+#     path_2_length = pixel_length(path_2)
 
-if path_3 is None:
-    print('path 3 is none')
-else:
-    path_3_length = pixel_length(path_3)
+# if path_3 is None:
+#     print('path 3 is none')
+# else:
+#     path_3_length = pixel_length(path_3)
 
 
 # print(path_1_length)
@@ -294,11 +294,12 @@ plt.plot(*zip(*path_3), color='red') # zip fixes this line somehow   plt.title('
 plt.xlim(zoom_amount)
 plt.ylim(zoom_amount)
 
-plt.show()
+# plt.show()
 
 
 
-
+for values in ice_thickness_grid:
+    print(values)
 
 
 
