@@ -8,7 +8,6 @@ from pyproj import CRS, Transformer
 from rasterio.transform import from_origin
 
 
-
 def convert_to_grid(nc_file, resolution):
     '''
     inputs a netCDF datafile
@@ -22,8 +21,7 @@ def convert_to_grid(nc_file, resolution):
     ice_thickness = np.nan_to_num(ice_thickness)  # set nan values to zero
     
     lon, lat = ds['lon'].values, ds['lat'].values
-    # ds.close()
-    
+
     # defining coordinate reference system
     latlon_crs = CRS(proj='latlong', datum='WGS84')  # lat/lon projection in degrees
     stereographic_crs = CRS('EPSG:32661')  # North Polar Stereographic projection in meters
@@ -37,8 +35,6 @@ def convert_to_grid(nc_file, resolution):
 
     # get extent of coordinates and defining grid parameters
     xmin, ymin, xmax, ymax = lon_m.min(), lat_m.min(), lon_m.max() + 1, lat_m.max() + 1
-    print(xmin, xmax)
-    print(ymin, ymax)
     n_cols, n_rows = int(np.ceil((xmax - xmin) / resolution)), int(np.ceil((ymax - ymin) / resolution))
         
     # initialize raster transform which maps pixel coordinates to geographic coordinates
@@ -56,7 +52,7 @@ def convert_to_grid(nc_file, resolution):
             col, row = int(col), int(row)
 
             # assigning current ice thickness to corresponding cell in the grid
-            ice_thickness_grid[row,col] = ice_thickness[i,j]  # np.array, (row,col) convention
+            ice_thickness_grid[col,n_rows -1 -row] = ice_thickness[i,j]  # np.array, (row,col) convention
 
     return ice_thickness_grid, transformer_m, transformer_d, lon_m, lat_m, raster_transform, ds
     
@@ -78,7 +74,7 @@ def transform_point(lat_point, lon_point):
     # finding the equivalent coordinates in the dataset with this index 
     nearest_lon = ds['lon'].values[index_m]
     nearest_lat = ds['lat'].values[index_m]
-    ds.close()
+
     # transforming the nearest coordinates in the dataset to meters
     lon_point_m, lat_point_m = transformer_m.transform(nearest_lon, nearest_lat)
 
@@ -87,7 +83,7 @@ def transform_point(lat_point, lon_point):
     lon_point_p, lat_point_p = int(lon_point_p), int(lat_point_p)  # set as closest integer
 
     # extracting ice thickness at this point in grid
-    ice_thickness_at_point = ice_thickness_grid[lat_point_p, lon_point_p]  # np.array follow row,col index order
+    # ice_thickness_at_point = ice_thickness_grid[lon_point_p, lat_point_p]  # np.array follow row,col index order
     
     return lon_point_p, lat_point_p
 
@@ -115,6 +111,11 @@ ice_thickness_grid, transformer_m, transformer_d, lon_m, lat_m, raster_transform
 # testing point mapping
 lat_point = 74.877
 lon_point = 9.359
+
+
+lat_point = 77.296
+lon_point = 39.231
+
 lon_point_p, lat_point_p = transform_point(lat_point, lon_point)
 # print(lon_point_p, lat_point_p)
 
@@ -123,27 +124,66 @@ lon, lat = revert_point(lon_point_p, lat_point_p)
 
 
 start_point = (72.305, 27.676)
-lat_end_p = 67.259
+lat_end_p = 67.259, 
 lon_end_p = 168.511
 
 # lon_end_p, lat_end_p = transform_point(lat_end_p, lon_end_p)
 # plotting the grid
 
-def plot_grid(grid, point_x, point_y):
-    plt.figure(figsize=(10,10))    
-    plt.imshow(grid,cmap='jet',origin='lower')
-    plt.colorbar(label='Ice Thickness')
-    plt.title('Ice Thickness grid')
+plt.figure(figsize=(10,10))    
+plt.imshow(ice_thickness_grid,cmap='jet',origin='lower')
+plt.colorbar(label='Ice Thickness')
+plt.title('Ice Thickness grid')
 
-    # plt.xlim(100,450)
-    # plt.ylim(100,450)
+# plt.xlim(100,450)
+# plt.ylim(100,450)
     
-    plt.plot(point_x,point_y, 'ro')
-    plt.plot(lon_end_p, lat_end_p, 'ro')
+# plt.plot(lon_point_p, lat_point_p, 'ro')
+plt.plot(lat_point_p, lon_point_p, 'ro')
       
-    plt.show()
-
-# plot_grid(ice_thickness_grid, lon_point_p, lat_point_p)
+plt.show()
 
 
-print(ice_thickness_grid.shape)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

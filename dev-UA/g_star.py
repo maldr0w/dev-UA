@@ -64,6 +64,16 @@ def cost_between(node1,node2):
     
     return cost
 
+
+def find_nearest_water(lat,lon, radius=5):
+    for i in range(radius):
+        for j in range(radius):
+            new_lat = lat + i * LATITUDE_INCREMENT
+            new_lon = lon +j * LONGITUDE_INCREMENT
+            if not globe.is_land(new_lat, new_lon):
+                return new_lat, new_lon
+
+
 def reduce_path(path):
     reduced_path = [path[0]]
     last_point = None
@@ -111,6 +121,9 @@ def g_star_search(start_coordinate,goal_coordinate,grid):
     # check if input coordinates are on land
     if globe.is_land(lat_start, lon_start):
         print('starting point is on land!')
+
+    if globe.is_land(lat_end,lon_end):
+        print('ending point is on land!')
     
     # transforming start and end points into pixel coordinates
     lon_start_point, lat_start_point = transform_point(lat_start,lon_start)
@@ -159,11 +172,11 @@ def g_star_search(start_coordinate,goal_coordinate,grid):
                 continue
             
             # land specification (based on globe module)
-            # lat, lon = revert_point(neighbor[0],neighbor[1])
-            # print(neighbor_latlon)
-            # if globe.is_land(lat,lon): # check wether a neighbor is on land
+            lon,lat = revert_point(neighbor[0],neighbor[1])
+            # print(lat,lon)
+            if globe.is_land(lat,lon): # check wether a neighbor is on land
                 # print('found land!')
-                # continue
+                continue
 
             # adding gscore (cost) from start to current_node and cost between current node and neighbor
             # this score is tentative as it will change if a better path to the neighbor node is found later in the search
@@ -184,26 +197,6 @@ def g_star_search(start_coordinate,goal_coordinate,grid):
 
 
     return None  # if no path has been found return None     
-
-
-# Defining start and end points
-start_point_1 = (72.305, 27.676)
-end_point_1 = (67.259, 168.511)
-
-start_point_2 = (71.711,60.062)
-end_point_2 = (67.259, 168.511)
-
-start_point_3 = (62.210,57.162)
-end_point_3 = (57.349,173.091)
-
-# initializing g_search
-path_1 = g_star_search(start_point_1,end_point_1,ice_thickness_grid)
-path_2 = g_star_search(start_point_2,end_point_2,ice_thickness_grid)
-path_3 = g_star_search(start_point_3,end_point_3,ice_thickness_grid)
-
-# draw_path(path, ice_thickness_grid)
-
-resolution = 25000
 
 
 def pixel_vector_magnitude(dx,dy,resolution):
@@ -233,9 +226,41 @@ def pixel_length(path):
         previous = segment  # set current point as previous for next iteration
     return length
 
-path_1_length = pixel_length(path_1)
-path_2_length = pixel_length(path_2)
-path_3_length = pixel_length(path_3)
+
+resolution = 25000
+
+# Defining start and end points
+start_point_1 = (72.305, 27.676)
+end_point_1 = (67.259, 168.511)
+
+start_point_2 = (71.711,60.062)
+end_point_2 = (67.259, 168.511)
+
+start_point_3 = (62.210,57.162)
+end_point_3 = (57.349,173.091)
+
+# initializing g_search
+path_1 = g_star_search(start_point_1,end_point_1,ice_thickness_grid)
+path_2 = g_star_search(start_point_2,end_point_2,ice_thickness_grid)
+path_3 = g_star_search(start_point_3,end_point_3,ice_thickness_grid)
+
+# draw_path(path, ice_thickness_grid)
+
+if path_1 is None:
+    print('path 1 is none')
+else:
+    path_1_length = pixel_length(path_1)
+    
+if path_2 is None:
+    print('path 2 is none')
+else: 
+    path_2_length = pixel_length(path_2)
+
+if path_3 is None:
+    print('path 3 is none')
+else:
+    path_3_length = pixel_length(path_3)
+
 
 # print(path_1_length)
 # print(path_2_length)
@@ -248,21 +273,22 @@ plt.title("")
 zoom_amount = (150,400)
 
 plt.subplot(1, 3, 1)
-plt.title(f'start:{start_point_1}, end:{end_point_1}, dist: {path_1_length}', fontsize = 8)
+# plt.title(f'start:{start_point_1}, end:{end_point_1}, dist: {path_1_length}', fontsize = 8)
+plt.title(f'start:{start_point_1}, end:{end_point_1}', fontsize = 8)
 plt.imshow(ice_thickness_grid, cmap='jet',origin='lower', interpolation='nearest')
 plt.plot(*zip(*path_1), color='red', label = f'{start_point_1}') # zip fixes this line somehow   plt.title('E = 2')
 plt.xlim(zoom_amount)
 plt.ylim(zoom_amount)
 
 plt.subplot(1, 3, 2)
-plt.title(f'start:{start_point_2}, end:{end_point_2}, dist: {path_2_length}', fontsize = 8)
+plt.title(f'start:{start_point_2}, end:{end_point_2}', fontsize = 8)
 plt.imshow(ice_thickness_grid, cmap='jet',origin='lower', interpolation='nearest')
 plt.plot(*zip(*path_2), color='red') # zip fixes this line somehow   plt.title('E = 2')
 plt.xlim(zoom_amount)
 plt.ylim(zoom_amount)
 
 plt.subplot(1, 3, 3)
-plt.title(f'start:{start_point_3}, end:{end_point_3}, dist: {path_3_length}', fontsize = 8)
+plt.title(f'start:{start_point_3}, end:{end_point_3}', fontsize = 8)
 plt.imshow(ice_thickness_grid, cmap='jet',origin='lower', interpolation='nearest')
 plt.plot(*zip(*path_3), color='red') # zip fixes this line somehow   plt.title('E = 2')
 plt.xlim(zoom_amount)
