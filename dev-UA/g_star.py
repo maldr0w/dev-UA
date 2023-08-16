@@ -119,11 +119,11 @@ def g_star_search(start_coordinate,goal_coordinate,grid):
 
     
     # check if input coordinates are on land
-    if globe.is_land(lat_start, lon_start):
-        print('starting point is on land!')
+    # if globe.is_land(lat_start, lon_start):
+    #     print('starting point is on land!')
 
-    if globe.is_land(lat_end,lon_end):
-        print('ending point is on land!')
+    # if globe.is_land(lat_end,lon_end):
+    #     print('ending point is on land!')
     
     # transforming start and end points into pixel coordinates
     lon_start_point, lat_start_point = transform_point(lat_start,lon_start)
