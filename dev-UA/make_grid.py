@@ -39,7 +39,6 @@ def convert_to_grid(nc_file, resolution):
     land_coordinates = find_land_coords(lon,lat)
     
     
-    
     # defining coordinate reference system
     latlon_crs = CRS(proj='latlong', datum='WGS84')  # lat/lon projection in degrees
     stereographic_crs = CRS('EPSG:32661')  # North Polar Stereographic projection in meters

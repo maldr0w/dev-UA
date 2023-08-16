@@ -33,7 +33,7 @@ def reconstruct_path(current_node,came_from):
         path.insert(0,current_node)  # insert current node at the front of the path list
     return path
     
-def get_neighbors(node, max_x, max_y):
+def get_neighbors(node,max_x,max_y):
     '''
     returns a list of adjacent nodes to the arg node
         '''
