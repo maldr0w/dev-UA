@@ -7,7 +7,7 @@ import cartopy as cp
 
 ## Extracting dataset variables
 FILE_NAME = 'ice_thickness_2021.nc'
-RESOLUTION = 25000 # m
+GRID_RESOLUTION = 25_000 # m
 
 def extract_data(file):
     '''
@@ -58,7 +58,6 @@ def scatter_plot():
     
 # scatterplot()
 
-lat,lon = latitude, longitude
 
 
 from shapely.geometry import Point
@@ -72,15 +71,18 @@ from global_land_mask import globe
 points = np.array(list(zip(latitude.flatten(), longitude.flatten())))
 # print(points[0][0])
 
-
-# add points from the dataset that are on land to a list
-# land_mask = [point for point in points if globe.is_land(point.x,point.y)]
+# add points from the dataset that are on land to a list with lat/lon order
+land_mask = [point for point in points if globe.is_land(point[0],point[1])]
 # print(f'lat={point.x}, lon={point.y} is on land!')
+# print(land_mask[0])
+
+
 
 
 ## Projection
 from pyproj import CRS, Transformer
 from rasterio.transform import from_origin
+
 # defining coordinate refrence systems
 latlon_crs = CRS(proj='latlong', datum='WGS84')  # lat/lon projection in degrees
 stereographic_crs = CRS('EPSG:32661')  # North Polar Stereographic projection in meters
@@ -89,38 +91,53 @@ stereographic_crs = CRS('EPSG:32661')  # North Polar Stereographic projection in
 transformer_m = Transformer.from_crs(latlon_crs, stereographic_crs)  # degrees to meters
 transformer_d = Transformer.from_crs(stereographic_crs, latlon_crs)  # meters to degrees
 
-# transforming
-lon_m, lat_m = transformer_m.transform(lon, lat)
+# transforming longitude and latitude coordinates into meters
+longitude_m, latitude_m = transformer_m.transform(longitude, latitude)
 
-land_mask_m = []
-for point in land_mask:
-    transformer_m.transform(point.x,point.y)
-    land_mask_m.append(point)
-    
-print(land_mask_m[0]) 
+# land_mask_m = []
+# for coord in land_mask:
+#     land_mask_m.append(transformer_m.transform(coord[1],coord[0]))
+
+# transforming land_mask coordinates to meters
+land_mask_m = [transformer_m.transform(coord[1],coord[0]) for coord in land_mask]
+land_x, land_y = zip(*land_mask_m)
+
 
 
 # get extent of coordinates and defining grid parameters
-xmin, ymin, xmax, ymax = lon_m.min(), lat_m.min(), lon_m.max() + 1, lat_m.max() + 1
-n_cols, n_rows = int(np.ceil((xmax - xmin) / RESOLUTION)), int(np.ceil((ymax - ymin) / RESOLUTION))
+xmin, ymin, xmax, ymax = longitude_m.min(), latitude_m.min(), longitude_m.max() + 1, latitude_m.max() + 1
+n_cols, n_rows = int(np.ceil((xmax - xmin) / GRID_RESOLUTION)), int(np.ceil((ymax - ymin) / GRID_RESOLUTION))
     
 # initialize raster transform which maps pixel coordinates to geographic coordinates
-raster_transform = from_origin(xmin, ymax, RESOLUTION, RESOLUTION)
+raster_transform = from_origin(xmin, ymax, GRID_RESOLUTION, GRID_RESOLUTION)
 
-# initializing grid with zeros
-ice_thickness_grid = np.zeros((n_rows, n_cols))  # np.array uses (row,col) convention
-
-
+# initializing grids with zeros
+sea_ice_thickness_grid = np.zeros((n_rows, n_cols))  # np.array uses (row,col) convention
+land_grid = np.zeros((n_rows,n_cols))
 
 # iterating over all points in the 2D ice thickness grid
-for i in range(ice_thickness.shape[0]):
-    for j in range(ice_thickness.shape[1]):
+for i in range(sea_ice_thickness.shape[0]):
+    for j in range(sea_ice_thickness.shape[1]):
 
-        x, y = lon_m[i,j], lat_m[i,j]  # extracting corresp. geographic coordinate (in meters) for each point
+        x, y = longitude_m[i,j], latitude_m[i,j]  # extracting corresp. geographic coordinate (in meters) for each point
         col, row = ~raster_transform * (x,y)  # inverse raster transform: transforming geographic coordinates to pixel coordinates
         col, row = int(col), int(row)
 
         # assigning current ice thickness to corresponding cell in the grid
-        ice_thickness_grid[row,col] = ice_thickness[i,j]  # np.array, (row,col) convention
-        land_mask_grid[row,col] = land_mask[i,j]
+        sea_ice_thickness_grid[row,col] = sea_ice_thickness[i,j]  # np.array, (row,col) convention
+
+        # col_, row_ = ~raster_transform * (land_x,land_y)
+        # col_, row_ = int(col), int(row)
+        
+        # land_grid[row,col] = land_mask[i,j]
+
+plt.figure(figsize=(10,10))
+plt.imshow(sea_ice_thickness_grid, cmap='jet', origin='lower')
+# plt.imshow(land_grid, origin='lower')
+plt.colorbar(label='Ice Thickness')
+plt.title('Sea Ice Thickness')
+
+plt.show()
+
+
 
