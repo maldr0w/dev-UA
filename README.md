@@ -92,5 +92,12 @@ When applying the data one must consider data projection:
    	<img src="https://github.com/maldr0w/dev-UA/assets/74768806/bb6444dd-6c0e-43bd-a432-d803a31be69a" width="400">
 
 - Now that I have a working grid, I can safely move on to further developing the A* algorithm on this grid.
-- _To be continued..._
+
+#### Land mask: 
+- added land mask to sea ice thickness map. Now I can simply check wether a point on the grid is on land or in the water
+
+	<img src="https://github.com/maldr0w/dev-UA/assets/74768806/7fe08b32-73d3-4443-8f08-17cf2e610649" width="400">
+ 
+ - moving on to getting total distance of A* search pathing
+
 ---
