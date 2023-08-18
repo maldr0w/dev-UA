@@ -31,31 +31,25 @@ latitude, longitude, sea_ice_thickness, sea_ice_thickness_with_nan = extract_dat
 lat_min, lon_min, lat_max, lon_max = latitude.min(), longitude.min(), latitude.max(), longitude.max()
 
 def scatter_plot():
-    fig, ax = plt.subplots(1, 1, figsize=(5,5), 
-                               subplot_kw = {'projection':cp.crs.NorthPolarStereo()})
-    
+    fig, ax = plt.subplots(1, 1, figsize=(5,5),subplot_kw = {'projection':cp.crs.NorthPolarStereo()})
     # add ocean and land outlines and colors
     ax.add_feature(cp.feature.OCEAN)
     ax.add_feature(cp.feature.LAND, edgecolor='black', zorder=1)
     ax.set_facecolor((1.0,1.0,1.0))
     ax.set_extent([-180,180,90,66], cp.crs.PlateCarree()) # set coordinate extent
     # changing extent will increase or decrease coverage
-    
     # add gridlines displaying latitude and longitude angles
     ax.gridlines(draw_labels=True, alpha=0.5, color='gray', 
                  linestyle='-', linewidth=0.5, 
                  xlocs = np.arange(-180, 181, 30),
                  ylocs = np.arange(60, 91, 5))
-    
     # visualize sea ice thickness as scatterpoints with corresponding longitude and latitude
     sc = ax.scatter(longitude, latitude, c=sea_ice_thickness_with_nan,
                     cmap='jet', marker='o', s= 1,
                     transform=cp.crs.PlateCarree())
-    
     # adding colorbar 
     plt.colorbar(sc, ax=ax, orientation='vertical')
     plt.show()
-    
 # scatterplot()
 
 
@@ -65,10 +59,7 @@ from global_land_mask import globe
 ## Finding which coordinates are on land
 
 # combining latitude and longitude coordinates
-# points = [Point(lat,lon) for lat, lon in zip(np.ravel(lat),np.ravel(lon))]
-
 points = np.array(list(zip(latitude.flatten(), longitude.flatten())))
-# print(points[0][0])
 
 # add points from the dataset that are on land to a list with lat/lon order
 land_mask = [point for point in points if globe.is_land(point[0],point[1])]
@@ -145,4 +136,33 @@ plt.show()
 
 # plt.show()
 
+def transform_point(lat_point, lon_point):
+    '''
+    transforms lat,lon coordinates to pixel coordinates
+    and extracts ice thickness at give coordinate    
+        '''
+    
+    # transforming point from degree to meters
+    lon_point_m, lat_point_m = transformer_m.transform(lon_point,lat_point)
+
+    # computing difference array between grid points and transformed point
+    diff_array_m = np.sqrt((lat_m - lat_point_m)**2 + (lon_m - lon_point_m)**2)  # heuristic distance
+    # extracting index of grid point with lowest difference / closest gridpoint to the transformed point
+    index_m = np.unravel_index(np.argmin(diff_array_m,axis=None), diff_array_m.shape)
+
+    # finding the equivalent coordinates in the dataset with this index 
+    nearest_lon = ds['lon'].values[index_m]
+    nearest_lat = ds['lat'].values[index_m]
+    ds.close()
+    # transforming the nearest coordinates in the dataset to meters
+    lon_point_m, lat_point_m = transformer_m.transform(nearest_lon, nearest_lat)
+
+    # tranforming again into pixel coordinates
+    lon_point_p, lat_point_p = ~raster_transform * (lon_point_m, lat_point_m)
+    lon_point_p, lat_point_p = int(lon_point_p), int(lat_point_p)  # set as closest integer
+
+    # extracting ice thickness at this point in grid
+    ice_thickness_at_point = ice_thickness_grid[lat_point_p, lon_point_p]  # np.array follow row,col index order
+    
+    return lon_point_p, lat_point_p
 
