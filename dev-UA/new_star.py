@@ -118,11 +118,15 @@ for x, y in land_mask_m:
 
 plt.figure(figsize=(8,8))
 plt.imshow(sea_ice_thickness_grid, cmap='jet', origin='lower')
+# plt.imshow(land_grid)
 # plt.imshow(land_grid, origin='lower')
 plt.colorbar(label='Ice Thickness')
 plt.title('Sea Ice Thickness')
 
-plt.show()
+# plt.show()
+
+# print(sea_ice_thickness_grid.shape)
+# print(land_grid.shape)
 
 # plot sea ice thickness
 # fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
@@ -146,14 +150,19 @@ def transform_point(lat_point, lon_point):
     lon_point_m, lat_point_m = transformer_m.transform(lon_point,lat_point)
 
     # computing difference array between grid points and transformed point
-    diff_array_m = np.sqrt((lat_m - lat_point_m)**2 + (lon_m - lon_point_m)**2)  # heuristic distance
+    diff_array_m = np.sqrt((latitude_m - lat_point_m)**2 + (longitude_m - lon_point_m)**2)  # heuristic distance
     # extracting index of grid point with lowest difference / closest gridpoint to the transformed point
     index_m = np.unravel_index(np.argmin(diff_array_m,axis=None), diff_array_m.shape)
+
+    # opening dataset
+    ds = xr.open_dataset(FILE_NAME)
 
     # finding the equivalent coordinates in the dataset with this index 
     nearest_lon = ds['lon'].values[index_m]
     nearest_lat = ds['lat'].values[index_m]
-    ds.close()
+    
+    ds.close()  # closing dataset
+    
     # transforming the nearest coordinates in the dataset to meters
     lon_point_m, lat_point_m = transformer_m.transform(nearest_lon, nearest_lat)
 
@@ -162,7 +171,153 @@ def transform_point(lat_point, lon_point):
     lon_point_p, lat_point_p = int(lon_point_p), int(lat_point_p)  # set as closest integer
 
     # extracting ice thickness at this point in grid
-    ice_thickness_at_point = ice_thickness_grid[lat_point_p, lon_point_p]  # np.array follow row,col index order
+    # ice_thickness_at_point = sea_ice_thickness_grid[lat_point_p, lon_point_p]  # np.array follow row,col index order
     
     return lon_point_p, lat_point_p
 
+
+# Initializing A* search algorithm
+
+def heuristic(node,goal):
+    '''
+    heuristic estimate (Manhatten distance)
+    estimate of distance between specified node and goal node
+        '''
+    x1, y1 = node
+    x2, y2 = goal
+    estimated_distance = abs(x2 - x1) + abs(y2 - y1)    
+    return estimated_distance
+
+
+def reconstruct_path(current_node,came_from): 
+    '''
+    returns reconstructed path as a list of nodes from start node to goal node
+    by iterating over visited nodes from the came_from set
+        '''
+    path = [current_node]  # initializing with current_node
+    while current_node in came_from:  # iterating through came from set
+        current_node = came_from[current_node]  # assign current node to the node it came from
+        path.insert(0,current_node)  # insert current node at the front of the path list
+    return path
+
+
+def get_neighbors(node,max_x,max_y):
+    '''
+    returns a list of adjacent nodes to the arg node
+        '''
+    x,y = node
+    moves = [(0,1), (0,-1), (1,0), (-1,0)]
+    neighbors = [(x + dx, y + dy) for dx, dy in moves if 0 <= x + dx < max_x and 0 <= y + dy < max_y]
+
+    return neighbors
+
+
+def cost_between(node1,node2):
+    '''
+    returns more accurate cost estimate between nodes 
+    based on the euclidean distance between nodes
+        '''
+    cost = 0
+    x1, y1 = node1
+    x2, y2 = node2
+    cost = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5  # euclidean distance
+    
+    return cost
+
+
+def A_star_search_algorithm(start_coordinate, end_coordinate, grid):
+    '''
+    returns most optimal path between star_coordinate and end_coordinate
+    path is chosen based on cost
+        '''
+    # extracting lat, lon coordinates
+    lat_start, lon_start = start_coordinate
+    lat_end, lon_end = end_coordinate
+
+    # transforming lat/lon coordinates to pixel coordinates
+    lon_start_point, lat_start_point = transform_point(lat_start, lon_start)  # considering lon as x and lat as y
+    lon_end_point, lat_end_point = transform_point(lat_end, lon_end)
+    
+    start = (lon_start_point, lat_start_point)
+    goal = (lon_end_point, lat_end_point)
+
+    # initializing sets for exploring and disgarding nodes
+    open_set = {start}  # will hold explorable nodes in a unordered list (set)
+    closed_set = set()  # will hold previously explored nodes, empty on init
+    came_from = {}  # will hold parent nodes, empty on init
+    
+    # defining scoreing
+    g_score = {start:0}  # cost from start node to each node
+    f_score = {start:heuristic(start, goal)}  # estimated total cost from start node to goal node via each node
+
+    # iterating over available nodes
+    while open_set:
+
+        # set current node to the node in the open set with the smallest f score
+        current_node = min(open_set, key=lambda node: f_score[node])  # smalles f score = lowest cost to reach goal node
+
+        if current_node == goal:
+            return reconstruct_path(current_node, came_from)
+
+        # lowest f score has been found
+        open_set.remove(current_node)  # remove current node from explorable nodes
+        closed_set.add(current_node)  # add current node to explored nodes
+
+        # iterating through current node's neighbors
+        for neighbor in get_neighbors(current_node, grid.shape[0], grid.shape[1]):
+
+            # continuing if neighbor has already been explored
+            if neighbor in closed_set:
+                continue
+
+            # extracting sea ice thickness at current neighbor
+            neighbor_ice_thickness = grid[neighbor[0]][neighbor[1]]
+
+            # extracting land mask at current neigbor
+            # neighbor_land = land_grid[neighbor[0]][neighbor[1]]
+            neighbor_land = grid[neighbor[0]][neighbor[1]]
+
+            # continuing if sea ice thickness of current neighbor is too thick
+            if neighbor_ice_thickness > 2:
+                continue
+
+            # continuing if current neighbor is on land
+            if neighbor_land == 4:
+                print('on land!')
+                continue
+
+            # adding g score as cost from start node to current node and cost between current node and neighbor
+            tentative_g_score = g_score[current_node] + cost_between(current_node, neighbor)  # changes if a smaller cost path is found
+
+            # if neighbor has been explored or added g score is more optimal than current most optimal path
+            if neighbor not in open_set or tentative_g_score < g_score[neighbor]:
+
+                # set current node as parent node
+                came_from[neighbor] = current_node
+
+                # updating g score
+                g_score[neighbor] = tentative_g_score 
+
+                # total cost from start node to goal node via this neighbor
+                f_score[neighbor] = tentative_g_score + heuristic(neighbor, goal)
+
+                # checking if neighbor has been explored
+                if neighbor not in open_set:
+                    open_set.add(neighbor)  # add neighbor to set of explorable nodes
+
+    # if no path has been found 
+    return None
+
+
+start_coordinate = (72.305, 27.676)
+end_coordinate = (67.259, 168.511)
+
+path = A_star_search_algorithm(start_coordinate, end_coordinate, sea_ice_thickness_grid)
+
+# plt.title(f'start:{start_point_1}, end:{end_point_1}, dist: {path_1_length}', fontsize = 8)
+# plt.title(f'start:{start_point_1}, end:{end_point_1}', fontsize = 8)
+plt.imshow(sea_ice_thickness_grid, cmap='jet',origin='lower', interpolation='nearest')
+plt.plot(*zip(*path), color='red', label = f'{start_coordinate}') # zip fixes this line somehow   plt.title('E = 2')
+# plt.xlim(zoom_amount)
+# plt.ylim(zoom_amount)
+plt.show()

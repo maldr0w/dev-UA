@@ -202,7 +202,7 @@ def g_star_search(start_coordinate,goal_coordinate,grid):
 def pixel_vector_magnitude(dx,dy,resolution):
     '''
     computes distance between two points in a grid
-    '''
+        '''
     if dx == 0:  # if change only in y direction
         return abs(dy) * resolution
     elif dy == 0:  # if change only in x direction
@@ -213,7 +213,7 @@ def pixel_vector_magnitude(dx,dy,resolution):
 def pixel_length(path):
     '''
     compute total path length based on distance per pixel (resolution)
-    '''
+        '''
     previous = path[0]
     length = 0.0
     # iterate over path, segment by segment
