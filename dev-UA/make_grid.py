@@ -7,17 +7,17 @@ import matplotlib.pyplot as plt
 from pyproj import CRS, Transformer
 from rasterio.transform import from_origin
 
-from mpl_toolkits.basemap import Basemap
+# from mpl_toolkits.basemap import Basemap
 
 
 ###
-def find_land_coords(lon,lat):
-    m = Basemap()
+# def find_land_coords(lon,lat):
+#     m = Basemap()
 
-    mask = np.vectorize(m.is_land)(lon,lat)
+#     mask = np.vectorize(m.is_land)(lon,lat)
 
-    result = np.where(mask,5,0)
-    return result
+#     result = np.where(mask,5,0)
+    # return result
 ###
 
 def convert_to_grid(nc_file, resolution):
@@ -36,7 +36,7 @@ def convert_to_grid(nc_file, resolution):
     # ds.close()
 
     ### 
-    land_coordinates = find_land_coords(lon,lat)
+    # land_coordinates = find_land_coords(lon,lat)
     
     
     # defining coordinate reference system
@@ -59,7 +59,7 @@ def convert_to_grid(nc_file, resolution):
 
     # initializing grid with zeros
     ice_thickness_grid = np.zeros((n_rows, n_cols))  # np.array uses (row,col) convention
-    land_mask_grid = np.zeros((n_rows, n_cols))
+    # land_mask_grid = np.zeros((n_rows, n_cols))
 
 
     # iterating over all points in the 2D ice thickness grid
@@ -72,9 +72,9 @@ def convert_to_grid(nc_file, resolution):
 
             # assigning current ice thickness to corresponding cell in the grid
             ice_thickness_grid[row,col] = ice_thickness[i,j]  # np.array, (row,col) convention
-            land_mask_grid[row,col] = land_mask[i,j]
+            # land_mask_grid[row,col] = land_mask[i,j]
 
-    return ice_thickness_grid, transformer_m, transformer_d, lon_m, lat_m, raster_transform, ds, land_mask_grid
+    return ice_thickness_grid, transformer_m, transformer_d, lon_m, lat_m, raster_transform, ds, # land_mask_grid
     
 
 def transform_point(lat_point, lon_point):

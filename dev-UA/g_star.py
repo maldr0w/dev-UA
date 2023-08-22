@@ -65,13 +65,13 @@ def cost_between(node1,node2):
     return cost
 
 
-def find_nearest_water(lat,lon, radius=5):
-    for i in range(radius):
-        for j in range(radius):
-            new_lat = lat + i * LATITUDE_INCREMENT
-            new_lon = lon +j * LONGITUDE_INCREMENT
-            if not globe.is_land(new_lat, new_lon):
-                return new_lat, new_lon
+# def find_nearest_water(lat,lon, radius=5):
+#     for i in range(radius):
+#         for j in range(radius):
+#             new_lat = lat + i * LATITUDE_INCREMENT
+#             new_lon = lon +j * LONGITUDE_INCREMENT
+#             if not globe.is_land(new_lat, new_lon):
+#                 return new_lat, new_lon
 
 
 def reduce_path(path):
@@ -294,12 +294,12 @@ plt.plot(*zip(*path_3), color='red') # zip fixes this line somehow   plt.title('
 plt.xlim(zoom_amount)
 plt.ylim(zoom_amount)
 
-# plt.show()
+plt.show()
 
 
 
-for values in ice_thickness_grid:
-    print(values)
+# for values in ice_thickness_grid:
+    # print(values)
 
 
 

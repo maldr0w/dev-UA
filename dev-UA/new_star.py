@@ -9,25 +9,20 @@ import cartopy as cp
 FILE_NAME = 'ice_thickness_2021.nc'
 GRID_RESOLUTION = 25_000 # m
 
-def extract_data(file):
+'''
+input: netCDF datafile
+output: lat/lon and sea ice thickness data-array    
     '''
-    input: netCDF datafile
-    output: lat/lon and sea ice thickness data-array    
-        '''
+ds = xr.open_dataset(FILE_NAME)  # opens dataset file
+# extracting variables by index
+latitude, longitude = ds['lat'].values, ds['lon'].values
+sea_ice_thickness_with_nan = ds['sea_ice_thickness'][0,:].values  # nan values will be useful in plotting
+sea_ice_thickness = np.nan_to_num(sea_ice_thickness_with_nan)  # replace nan values with 0
+# ds.close()  # closes dataset to save resources
 
-    ds = xr.open_dataset(file)  # opens dataset file
+latitude, longitude, sea_ice_thickness, sea_ice_thickness_with_nan
 
-    # extracting variables by index
-    latitude, longitude = ds['lat'].values, ds['lon'].values
-    sea_ice_thickness_with_nan = ds['sea_ice_thickness'][0,:].values  # nan values will be useful in plotting
-    sea_ice_thickness = np.nan_to_num(sea_ice_thickness_with_nan)  # replace nan values with 0
-
-    ds.close()  # closes dataset to save resources
-
-    return latitude, longitude, sea_ice_thickness, sea_ice_thickness_with_nan
-
-
-latitude, longitude, sea_ice_thickness, sea_ice_thickness_with_nan = extract_data(FILE_NAME)
+# latitude, longitude, sea_ice_thickness, sea_ice_thickness_with_nan = extract_data(FILE_NAME)
 lat_min, lon_min, lat_max, lon_max = latitude.min(), longitude.min(), latitude.max(), longitude.max()
 
 def scatter_plot():
@@ -109,12 +104,17 @@ for i in range(sea_ice_thickness.shape[0]):
         sea_ice_thickness_grid[row,col] = sea_ice_thickness[i,j]  # np.array, (row,col) convention
 
 # raster transforming land mask
-for x, y in land_mask_m:
-    col, row = ~raster_transform * (x, y)
-    col, row = int(col), int(row)
+# for x, y in land_mask_m:
+    # col, row = ~raster_transform * (x, y)
+    # col, row = int(col), int(row)
 
     # land_grid[row, col] = 1
-    sea_ice_thickness_grid[row,col] = 4
+    # sea_ice_thickness_grid[row,col] = 4
+
+
+
+
+
 
 plt.figure(figsize=(8,8))
 plt.imshow(sea_ice_thickness_grid, cmap='jet', origin='lower')
@@ -155,13 +155,13 @@ def transform_point(lat_point, lon_point):
     index_m = np.unravel_index(np.argmin(diff_array_m,axis=None), diff_array_m.shape)
 
     # opening dataset
-    ds = xr.open_dataset(FILE_NAME)
+    # ds = xr.open_dataset(FILE_NAME)
 
     # finding the equivalent coordinates in the dataset with this index 
     nearest_lon = ds['lon'].values[index_m]
     nearest_lat = ds['lat'].values[index_m]
     
-    ds.close()  # closing dataset
+    # ds.close()  # closing dataset
     
     # transforming the nearest coordinates in the dataset to meters
     lon_point_m, lat_point_m = transformer_m.transform(nearest_lon, nearest_lat)
@@ -266,25 +266,26 @@ def A_star_search_algorithm(start_coordinate, end_coordinate, grid):
         # iterating through current node's neighbors
         for neighbor in get_neighbors(current_node, grid.shape[0], grid.shape[1]):
 
-            # continuing if neighbor has already been explored
-            if neighbor in closed_set:
-                continue
-
             # extracting sea ice thickness at current neighbor
             neighbor_ice_thickness = grid[neighbor[0]][neighbor[1]]
-
+        
+            
             # extracting land mask at current neigbor
             # neighbor_land = land_grid[neighbor[0]][neighbor[1]]
             neighbor_land = grid[neighbor[0]][neighbor[1]]
+            
+            # continuing if neighbor has already been explored
+            if neighbor in closed_set:
+                continue
 
             # continuing if sea ice thickness of current neighbor is too thick
             if neighbor_ice_thickness > 2:
                 continue
 
             # continuing if current neighbor is on land
-            if neighbor_land == 4:
-                print('on land!')
-                continue
+            # if neighbor_land == 4:
+                # print('on land!')
+                # continue
 
             # adding g score as cost from start node to current node and cost between current node and neighbor
             tentative_g_score = g_score[current_node] + cost_between(current_node, neighbor)  # changes if a smaller cost path is found
@@ -309,15 +310,27 @@ def A_star_search_algorithm(start_coordinate, end_coordinate, grid):
     return None
 
 
-start_coordinate = (72.305, 27.676)
-end_coordinate = (67.259, 168.511)
+start_coordinate = (73.073, 9.555)
+end_coordinate = (67.449, 168.029)
+
+x,y = transform_point(start_coordinate[0], start_coordinate[1])
+x_,y_ = transform_point(end_coordinate[0],end_coordinate[1])
 
 path = A_star_search_algorithm(start_coordinate, end_coordinate, sea_ice_thickness_grid)
+zoom_amount = (150,400)
 
 # plt.title(f'start:{start_point_1}, end:{end_point_1}, dist: {path_1_length}', fontsize = 8)
 # plt.title(f'start:{start_point_1}, end:{end_point_1}', fontsize = 8)
 plt.imshow(sea_ice_thickness_grid, cmap='jet',origin='lower', interpolation='nearest')
-plt.plot(*zip(*path), color='red', label = f'{start_coordinate}') # zip fixes this line somehow   plt.title('E = 2')
-# plt.xlim(zoom_amount)
-# plt.ylim(zoom_amount)
+# plt.plot(*zip(*path), color='red', label = f'{start_coordinate}') # zip fixes this line somehow   plt.title('E = 2')
+plt.plot(x_,y_,'ro')
+
+plt.xlim(zoom_amount)
+plt.ylim(zoom_amount)
 plt.show()
+
+
+
+
+
+
