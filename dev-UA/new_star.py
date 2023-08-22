@@ -113,9 +113,6 @@ for i in range(sea_ice_thickness.shape[0]):
 
 
 
-
-
-
 plt.figure(figsize=(8,8))
 plt.imshow(sea_ice_thickness_grid, cmap='jet', origin='lower')
 # plt.imshow(land_grid)
@@ -123,22 +120,6 @@ plt.imshow(sea_ice_thickness_grid, cmap='jet', origin='lower')
 plt.colorbar(label='Ice Thickness')
 plt.title('Sea Ice Thickness')
 
-# plt.show()
-
-# print(sea_ice_thickness_grid.shape)
-# print(land_grid.shape)
-
-# plot sea ice thickness
-# fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-# ax1.imshow(sea_ice_thickness_grid, cmap='jet', origin='lower')
-# ax1.set_title('Sea Ice Thickness')
-# # ax1.colorbar(label='Ice Thickness')
-
-# # plot land grid
-# ax2.imshow(land_grid, cmap='gray', origin='lower')
-# ax2.set_title('Land Grid')
-
-# plt.show()
 
 def transform_point(lat_point, lon_point):
     '''
@@ -149,31 +130,36 @@ def transform_point(lat_point, lon_point):
     # transforming point from degree to meters
     lon_point_m, lat_point_m = transformer_m.transform(lon_point,lat_point)
 
-    # computing difference array between grid points and transformed point
-    diff_array_m = np.sqrt((latitude_m - lat_point_m)**2 + (longitude_m - lon_point_m)**2)  # heuristic distance
-    # extracting index of grid point with lowest difference / closest gridpoint to the transformed point
-    index_m = np.unravel_index(np.argmin(diff_array_m,axis=None), diff_array_m.shape)
-
-    # opening dataset
-    # ds = xr.open_dataset(FILE_NAME)
-
-    # finding the equivalent coordinates in the dataset with this index 
-    nearest_lon = ds['lon'].values[index_m]
-    nearest_lat = ds['lat'].values[index_m]
-    
-    # ds.close()  # closing dataset
-    
-    # transforming the nearest coordinates in the dataset to meters
-    lon_point_m, lat_point_m = transformer_m.transform(nearest_lon, nearest_lat)
-
     # tranforming again into pixel coordinates
     lon_point_p, lat_point_p = ~raster_transform * (lon_point_m, lat_point_m)
     lon_point_p, lat_point_p = int(lon_point_p), int(lat_point_p)  # set as closest integer
 
-    # extracting ice thickness at this point in grid
-    # ice_thickness_at_point = sea_ice_thickness_grid[lat_point_p, lon_point_p]  # np.array follow row,col index order
+    # Now, snap these coordinates to the nearest point in the sea_ice_thickness_grid.
+    # Assuming sea_ice_thickness_grid has the shape (num_rows, num_cols)
+    num_rows, num_cols = sea_ice_thickness_grid.shape
+    row_coords, col_coords = np.mgrid[0:num_rows, 0:num_cols]
+
+    diff_array_p = np.sqrt((row_coords - lat_point_p)**2 + (col_coords - lon_point_p)**2)
+    nearest_pixel_index = np.unravel_index(np.argmin(diff_array_p, axis=None), diff_array_p.shape)
+
+    point_row, point_col = nearest_pixel_index
     
-    return lon_point_p, lat_point_p
+    return point_row, point_col
+
+def revert_point(lon_pixel,lat_pixel):
+    '''
+    transform pixel coordinates back to lat/lon coordinates    
+        '''
+    # convert pixel coordinates back to meters
+    lon_m, lat_m = raster_transform * (lon_pixel, lat_pixel)
+
+    # convert meters to degrees
+    lon, lat = transformer_d.transform(lon_m, lat_m)
+
+    return lon, lat
+
+
+
 
 
 # Initializing A* search algorithm
@@ -309,21 +295,31 @@ def A_star_search_algorithm(start_coordinate, end_coordinate, grid):
     # if no path has been found 
     return None
 
+# defining start and end coordinates (lat,lon)
+start_coordinate = (68.914,39.027)
+end_coordinate = (63.687, 147.118)
 
-start_coordinate = (73.073, 9.555)
-end_coordinate = (67.449, 168.029)
+start_lon_p,start_lat_p = transform_point(start_coordinate[0], start_coordinate[1])
+end_lon_p, end_lat_p = transform_point(end_coordinate[0], end_coordinate[1])
 
-x,y = transform_point(start_coordinate[0], start_coordinate[1])
-x_,y_ = transform_point(end_coordinate[0],end_coordinate[1])
+start_lon, start_lat = revert_point(start_lon_p, start_lat_p)
+
+# print(start_lon, start_lat)
+
+
+
 
 path = A_star_search_algorithm(start_coordinate, end_coordinate, sea_ice_thickness_grid)
 zoom_amount = (150,400)
 
 # plt.title(f'start:{start_point_1}, end:{end_point_1}, dist: {path_1_length}', fontsize = 8)
 # plt.title(f'start:{start_point_1}, end:{end_point_1}', fontsize = 8)
-plt.imshow(sea_ice_thickness_grid, cmap='jet',origin='lower', interpolation='nearest')
 # plt.plot(*zip(*path), color='red', label = f'{start_coordinate}') # zip fixes this line somehow   plt.title('E = 2')
-plt.plot(x_,y_,'ro')
+plt.imshow(sea_ice_thickness_grid, cmap='jet',origin='lower', interpolation='nearest')
+# plt.imshow(sea_ice_thickness_grid, cmap='jet', interpolation='nearest')
+
+plt.plot(start_lon_p, start_lat_p,'ro')
+plt.plot(end_lon_p, end_lat_p,'ro')
 
 plt.xlim(zoom_amount)
 plt.ylim(zoom_amount)

@@ -9,35 +9,20 @@ from rasterio.transform import from_origin
 
 # from mpl_toolkits.basemap import Basemap
 
+def get_coordinates(nc_file):
+    ds = xr.open_dataset(nc_file)  # opening dataset
+    # defining variables
+    ice_thickness = ds['sea_ice_thickness'][0,:].values
+    ice_thickness = np.nan_to_num(ice_thickness)  # set nan values to zero
+    lon, lat = ds['lon'].values, ds['lat'].values
+    ds.close()
+    return lat, lon
 
-###
-# def find_land_coords(lon,lat):
-#     m = Basemap()
-
-#     mask = np.vectorize(m.is_land)(lon,lat)
-
-#     result = np.where(mask,5,0)
-    # return result
-###
-
-def convert_to_grid(nc_file, resolution):
+def convert_to_grid(lat,lon, resolution):
     '''
     inputs a netCDF datafile
     converts the lat/lon data points from degrees to meters in a pixel grid
         '''
-    
-    ds = xr.open_dataset(nc_file)  # opening dataset
-
-    # defining variables
-    ice_thickness = ds['sea_ice_thickness'][0,:].values
-    ice_thickness = np.nan_to_num(ice_thickness)  # set nan values to zero
-    
-    lon, lat = ds['lon'].values, ds['lat'].values
-    # ds.close()
-
-    ### 
-    # land_coordinates = find_land_coords(lon,lat)
-    
     
     # defining coordinate reference system
     latlon_crs = CRS(proj='latlong', datum='WGS84')  # lat/lon projection in degrees
@@ -61,6 +46,7 @@ def convert_to_grid(nc_file, resolution):
     ice_thickness_grid = np.zeros((n_rows, n_cols))  # np.array uses (row,col) convention
     # land_mask_grid = np.zeros((n_rows, n_cols))
 
+    
 
     # iterating over all points in the 2D ice thickness grid
     for i in range(ice_thickness.shape[0]):
@@ -74,15 +60,14 @@ def convert_to_grid(nc_file, resolution):
             ice_thickness_grid[row,col] = ice_thickness[i,j]  # np.array, (row,col) convention
             # land_mask_grid[row,col] = land_mask[i,j]
 
-    return ice_thickness_grid, transformer_m, transformer_d, lon_m, lat_m, raster_transform, ds, # land_mask_grid
-    
+    return ice_thickness_grid, transformer_m, transformer_d, lon_m, lat_m, raster_transform 
+
 
 def transform_point(lat_point, lon_point):
     '''
     transforms lat,lon coordinates to pixel coordinates
     and extracts ice thickness at give coordinate    
         '''
-    
     # transforming point from degree to meters
     lon_point_m, lat_point_m = transformer_m.transform(lon_point,lat_point)
 
@@ -120,12 +105,13 @@ def revert_point(lon_pixel,lat_pixel):
 
     return lat, lon
 
+'''
 
 file_name = 'ice_thickness_2021.nc'
 resolution = 25000  # 25km
 
 # extracting parameters
-ice_thickness_grid, transformer_m, transformer_d, lon_m, lat_m, raster_transform, ds = convert_to_grid(file_name, resolution)
+# ice_thickness_grid, transformer_m, transformer_d, lon_m, lat_m, raster_transform, ds = convert_to_grid(file_name, resolution)
 
 # testing point mapping
 lat_point = 74.877
@@ -133,14 +119,19 @@ lon_point = 9.359
 lon_point_p, lat_point_p = transform_point(lat_point, lon_point)
 # print(lon_point_p, lat_point_p)
 
+
 lon, lat = revert_point(lon_point_p, lat_point_p)
-# print(lon,lat)
+
+end = (67.449, 168.029)
+
+lon, lat = transform_point(end[0],end[1])
+lon, lat = revert_point(lon, lat)
+print(lon,lat)
 
 
 start_point = (72.305, 27.676)
 lat_end_p = 67.259
 lon_end_p = 168.511
-
 # lon_end_p, lat_end_p = transform_point(lat_end_p, lon_end_p)
 # plotting the grid
 
@@ -162,3 +153,4 @@ def plot_grid(grid, point_x, point_y):
 
 
 # print(ice_thickness_grid.shape)
+'''
