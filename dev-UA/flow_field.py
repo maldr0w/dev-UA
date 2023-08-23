@@ -38,50 +38,58 @@ start_latitude, start_longitude = latitudes[i,j], longitudes[i,j]
 # plt.plot(start_longitude, start_latitude,'ro')
 # plt.show()
 
+print(i,j)
+# ice_thickness[i,j] = 10
 
-def compute_gradient(grid, x, y):
-    # Handle boundary cases by clamping
-    x_minus = max(0, x-1)
-    x_plus = min(len(grid)-1, x+1)
+plt.imshow(ice_thickness)
+plt.show()
+
+
+
+
+# def compute_gradient(grid, x, y):
+#     # Handle boundary cases by clamping
+#     x_minus = max(0, x-1)
+#     x_plus = min(len(grid)-1, x+1)
     
-    y_minus = max(0, y-1)
-    y_plus = min(len(grid[0])-1, y+1)
+#     y_minus = max(0, y-1)
+#     y_plus = min(len(grid[0])-1, y+1)
 
-    dx = grid[x_plus][y] - grid[x_minus][y]
-    dy = grid[x][y_plus] - grid[x][y_minus]
+#     dx = grid[x_plus][y] - grid[x_minus][y]
+#     dy = grid[x][y_plus] - grid[x][y_minus]
 
-    # If gradient is zero, add a small random perturbation
-    if dx == 0 and dy == 0:
-        dx = np.random.uniform(-0.01, 0.01)
-        dy = np.random.uniform(-0.01, 0.01)
+#     # If gradient is zero, add a small random perturbation
+#     if dx == 0 and dy == 0:
+#         dx = np.random.uniform(-0.01, 0.01)
+#         dy = np.random.uniform(-0.01, 0.01)
 
-    return dx, dy
+#     return dx, dy
 
 
-def normalize_vector(dx, dy):
-    length = np.sqrt(dx*dx + dy*dy)
-    if length != 0:
-        dx /= length
-        dy /= length
-    return dx, dy
+# def normalize_vector(dx, dy):
+#     length = np.sqrt(dx*dx + dy*dy)
+#     if length != 0:
+#         dx /= length
+#         dy /= length
+#     return dx, dy
 
-def create_flow_field(grid):
-    flow_field = np.zeros((len(grid), len(grid[0]), 2))  # Initialize 2D grid of vectors
+# def create_flow_field(grid):
+#     flow_field = np.zeros((len(grid), len(grid[0]), 2))  # Initialize 2D grid of vectors
     
-    for x in range(len(grid)):
-        for y in range(len(grid[0])):
-            dx, dy = compute_gradient(grid, x, y)
-            dx, dy = normalize_vector(dx, dy)  # Optional, if you want normalized vectors
-            flow_field[x][y] = [dx, dy]
+#     for x in range(len(grid)):
+#         for y in range(len(grid[0])):
+#             dx, dy = compute_gradient(grid, x, y)
+#             dx, dy = normalize_vector(dx, dy)  # Optional, if you want normalized vectors
+#             flow_field[x][y] = [dx, dy]
     
-    return flow_field
+#     return flow_field
 
 
-flow_field = create_flow_field(ice_thickness)
-# print(flow_field)
+# flow_field = create_flow_field(ice_thickness)
+# # print(flow_field)
 
-# plt.imshow(flow_field)
-# plt.show()
+# # plt.imshow(flow_field)
+# # plt.show()
 
 
 
