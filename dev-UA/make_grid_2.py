@@ -83,12 +83,6 @@ def transform_point(FILE_NAME,GRID_RESOLUTION,latitude_point,longitude_point, la
     return longitude_point_pixel, latitude_point_pixel
 
 
-
-
-
-
-
-
 def convert_to_grid(latitude, longitude, ice_thickness,  grid_resolution):
     ''' converts ice thickness coordinates into a pixel grid '''
 
