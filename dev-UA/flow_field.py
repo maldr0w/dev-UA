@@ -42,6 +42,7 @@ print(i,j)
 # ice_thickness[i,j] = 10
 
 plt.imshow(ice_thickness)
+plt.plot(start_longitude, start_latitude, 'ro')
 plt.show()
 
 
