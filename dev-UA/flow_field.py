@@ -14,12 +14,10 @@ latitudes, longitudes = ds['lat'].values, ds['lon'].values
 
 ds.close()
 
-
 GRID_RESOLUTION = 25_000
 
 lat_min, lon_min = latitudes.min(), longitudes.min()
 lat_max, lon_max = latitudes.max(), longitudes.max()
-
 
 target_latitude, target_longitude = 73.173, 8.779
 target_latitude, target_longitude = 64.549, 169.574
@@ -30,7 +28,7 @@ target_latitude, target_longitude = 73.626, 104.177
 distance_array = np.sqrt((latitudes - target_latitude)**2 + (longitudes - target_longitude)**2)
 i,j = np.unravel_index(distance_array.argmin(), distance_array.shape)
 
-print(latitudes[i,j], longitudes[i,j])
+# print(latitudes[i,j], longitudes[i,j])
 
 start_latitude, start_longitude = latitudes[i,j], longitudes[i,j]
 
@@ -38,14 +36,15 @@ start_latitude, start_longitude = latitudes[i,j], longitudes[i,j]
 # plt.plot(start_longitude, start_latitude,'ro')
 # plt.show()
 
-print(i,j)
+# print(i,j)
 # ice_thickness[i,j] = 10
 
 plt.imshow(ice_thickness)
-plt.plot(start_longitude, start_latitude, 'ro')
+# plt.plot(start_longitude, start_latitude, 'ro')
+plt.plot(185,122,'ro')
 plt.show()
 
-
+# i,j = 185, 122
 
 
 # def compute_gradient(grid, x, y):
