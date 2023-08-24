@@ -41,11 +41,27 @@ plt.show()
 
 # print(ds_latitude, ds_longitude)
 
+<<<<<<< HEAD
 
 
 
+=======
+GRID_RESOLUTION = 25_000
+
+lat_min, lon_min = latitudes.min(), longitudes.min()
+lat_max, lon_max = latitudes.max(), longitudes.max()
+
+target_latitude, target_longitude = 73.173, 8.779
+target_latitude, target_longitude = 64.549, 169.574
+target_latitude, target_longitude = 68.879, 99.346
+target_latitude, target_longitude = 73.626, 104.177
+>>>>>>> b91610b9bf3f7dc6b05c1585232703b59a8e5c8f
 
 
+<<<<<<< HEAD
+=======
+# print(latitudes[i,j], longitudes[i,j])
+>>>>>>> b91610b9bf3f7dc6b05c1585232703b59a8e5c8f
 
 
 
@@ -110,7 +126,19 @@ plt.show()
 # plt.plot(start_longitude, start_latitude, 'ro')
 # plt.show()
 
+<<<<<<< HEAD
 
+=======
+# print(i,j)
+# ice_thickness[i,j] = 10
+
+plt.imshow(ice_thickness)
+# plt.plot(start_longitude, start_latitude, 'ro')
+plt.plot(185,122,'ro')
+plt.show()
+
+# i,j = 185, 122
+>>>>>>> b91610b9bf3f7dc6b05c1585232703b59a8e5c8f
 
 
 # def compute_gradient(grid, x, y):
