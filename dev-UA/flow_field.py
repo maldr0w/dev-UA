@@ -5,45 +5,110 @@ import heapq
 import xarray as xr
 from scipy.interpolate import griddata
 
-ds = xr.open_dataset('ice_thickness_2022.nc')
-ice_thickness_nan = ds['sea_ice_thickness'][0,:].values
-ice_thickness = np.nan_to_num(ice_thickness_nan)
+dataset = xr.open_dataset('ice_thickness_2022.nc')
+# print(ds['sea_ice_thickness'].coords)
+ice_thickness_nan = dataset['sea_ice_thickness'][0,:].values
+# ice_thickness = np.nan_to_num(ice_thickness_nan)
 
-latitudes, longitudes = ds['lat'].values, ds['lon'].values
-# latitude.shape = (432,432), longitude.shape = (432,432), ice_thickness.shape = (432,432)
+x = ice_thickness_nan
+print(x)
 
-ds.close()
+# latitudes, longitudes = ds['lat'].values, ds['lon'].values
+# # latitude.shape = (432,432), longitude.shape = (432,432), ice_thickness.shape = (432,432)
+
+# ds.close()
+
+projdata = dataset['Lambert_Azimuthal_Grid']
+
+from mpl_toolkits.basemap import Basemap
+
+m = Basemap(projection='laea', lat_0=0,lon_0=0)
+
+plt.show()
+
+# from pyproj import CRS, Transformer
+
+# # defining coordinate refrence systems
+# ds_crs = CRS('ESRI:102017')  # geographical
+# stereo_crs = CRS('EPSG:32661')  # North Polar Stereographic
+
+# # initializing degree and meter conversion
+# transformer = Transformer.from_crs(stereo_crs,ds_crs)
+
+# latitude, longitude = 64.816, 169.318
+
+# ds_latitude, ds_longitude = transformer.transform(latitude,longitude)
+
+# print(ds_latitude, ds_longitude)
 
 
-GRID_RESOLUTION = 25_000
-
-lat_min, lon_min = latitudes.min(), longitudes.min()
-lat_max, lon_max = latitudes.max(), longitudes.max()
 
 
-target_latitude, target_longitude = 73.173, 8.779
-target_latitude, target_longitude = 64.549, 169.574
-target_latitude, target_longitude = 68.879, 99.346
-target_latitude, target_longitude = 73.626, 104.177
 
-# finding the closest point to the target within the latitude and longitude arrays
-distance_array = np.sqrt((latitudes - target_latitude)**2 + (longitudes - target_longitude)**2)
-i,j = np.unravel_index(distance_array.argmin(), distance_array.shape)
 
-print(latitudes[i,j], longitudes[i,j])
 
-start_latitude, start_longitude = latitudes[i,j], longitudes[i,j]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# GRID_RESOLUTION = 25_000
+
+# lat_min, lon_min = latitudes.min(), longitudes.min()
+# lat_max, lon_max = latitudes.max(), longitudes.max()
+
+
+# target_latitude, target_longitude = 73.173, 8.779
+# target_latitude, target_longitude = 64.549, 169.574
+# target_latitude, target_longitude = 68.879, 99.346
+# target_latitude, target_longitude = 73.626, 104.177
+
+# # finding the closest point to the target within the latitude and longitude arrays
+# distance_array = np.sqrt((latitudes - target_latitude)**2 + (longitudes - target_longitude)**2)
+# i,j = np.unravel_index(distance_array.argmin(), distance_array.shape)
+
+# print(latitudes[i,j], longitudes[i,j])
+
+# start_latitude, start_longitude = latitudes[i,j], longitudes[i,j]
+
+# # plt.imshow(ice_thickness)
+# # plt.plot(start_longitude, start_latitude,'ro')
+# # plt.show()
+
+# print(i,j)
+# # ice_thickness[i,j] = 10
 
 # plt.imshow(ice_thickness)
-# plt.plot(start_longitude, start_latitude,'ro')
+# plt.plot(start_longitude, start_latitude, 'ro')
 # plt.show()
-
-print(i,j)
-# ice_thickness[i,j] = 10
-
-plt.imshow(ice_thickness)
-plt.plot(start_longitude, start_latitude, 'ro')
-plt.show()
 
 
 
