@@ -96,8 +96,8 @@ land_grid = np.zeros((n_rows,n_cols))
 for i in range(sea_ice_thickness.shape[0]):
     for j in range(sea_ice_thickness.shape[1]):
         
-        x, y = longitude_m[i,j], latitude_m[i,j]  # extracting corresp. geographic coordinate (in meters) for each point
-        col, row = ~raster_transform * (x,y)  # inverse raster transform: transforming geographic coordinates to pixel coordinates
+        x_coord, y_coord = longitude_m[i,j], latitude_m[i,j]  # extracting corresp. geographic coordinate (in meters) for each point
+        col, row = ~raster_transform * (x_coord,y_coord)  # inverse raster transform: transforming geographic coordinates to pixel coordinates
         col, row = int(col), int(row)
 
         # assigning current ice thickness to corresponding cell in the grid
@@ -143,7 +143,7 @@ plt.title('Sea Ice Thickness')
 def transform_point(lat_point, lon_point):
     '''
     transforms lat,lon coordinates to pixel coordinates
-    and extracts ice thickness at give coordinate    
+    and extracts ice thickness at given coordinate    
         '''
     
     # transforming point from degree to meters
@@ -313,8 +313,8 @@ def A_star_search_algorithm(start_coordinate, end_coordinate, grid):
 start_coordinate = (73.073, 9.555)
 end_coordinate = (67.449, 168.029)
 
-x,y = transform_point(start_coordinate[0], start_coordinate[1])
-x_,y_ = transform_point(end_coordinate[0],end_coordinate[1])
+x_initial, y_initial = transform_point(start_coordinate[0], start_coordinate[1])
+x_final, y_final = transform_point(end_coordinate[0], end_coordinate[1])
 
 path = A_star_search_algorithm(start_coordinate, end_coordinate, sea_ice_thickness_grid)
 zoom_amount = (150,400)
@@ -323,7 +323,7 @@ zoom_amount = (150,400)
 # plt.title(f'start:{start_point_1}, end:{end_point_1}', fontsize = 8)
 plt.imshow(sea_ice_thickness_grid, cmap='jet',origin='lower', interpolation='nearest')
 # plt.plot(*zip(*path), color='red', label = f'{start_coordinate}') # zip fixes this line somehow   plt.title('E = 2')
-plt.plot(x_,y_,'ro')
+plt.plot(x_final,y_final,'ro')
 
 plt.xlim(zoom_amount)
 plt.ylim(zoom_amount)
