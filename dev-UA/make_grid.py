@@ -1,13 +1,9 @@
 
-import rasterio
-import numpy as np
 import xarray as xr
-import netCDF4 as nc
-import matplotlib.pyplot as plt
+import numpy as np
 from pyproj import CRS, Transformer
 from rasterio.transform import from_origin
 
-# from mpl_toolkits.basemap import Basemap
 
 
 ###
@@ -161,4 +157,3 @@ def plot_grid(grid, point_x, point_y):
 # plot_grid(ice_thickness_grid, lon_point_p, lat_point_p)
 
 
-# print(ice_thickness_grid.shape)
