@@ -113,9 +113,6 @@ for i in range(sea_ice_thickness.shape[0]):
 
 
 
-
-
-
 plt.figure(figsize=(8,8))
 plt.imshow(sea_ice_thickness_grid, cmap='jet', origin='lower')
 # plt.imshow(land_grid)
@@ -123,22 +120,6 @@ plt.imshow(sea_ice_thickness_grid, cmap='jet', origin='lower')
 plt.colorbar(label='Ice Thickness')
 plt.title('Sea Ice Thickness')
 
-# plt.show()
-
-# print(sea_ice_thickness_grid.shape)
-# print(land_grid.shape)
-
-# plot sea ice thickness
-# fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-# ax1.imshow(sea_ice_thickness_grid, cmap='jet', origin='lower')
-# ax1.set_title('Sea Ice Thickness')
-# # ax1.colorbar(label='Ice Thickness')
-
-# # plot land grid
-# ax2.imshow(land_grid, cmap='gray', origin='lower')
-# ax2.set_title('Land Grid')
-
-# plt.show()
 
 def transform_point(lat_point, lon_point):
     '''
