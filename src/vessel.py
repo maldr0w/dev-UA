@@ -33,36 +33,35 @@ class Vessel:
             # return p
         else:
             return (i_f * self.k) * (v ** 3) * t
-
+    def p_available(self, t=0.0):
+        return self.p_tot - self.p_resist(t=t)
     def p_surplus(self, t=0.0, v=None):        
         if self.p_tot < self.p_resist(t=t, v=v):
             return float('inf')
         return self.p_tot - self.p_resist(t=t, v=v)
 
     def v_limit(self, t=0.0, v=None):
-        p_available = self.p_tot - self.p_resist(t=t)
-        return np.cbrt(p_available / self.k)
+        # p_available = self.p_tot - self.p_resist(t=t)
+        return np.cbrt(self.p_available(t=t) / self.k)
     def time_for_trip(self, t=0.0, d=utils.unit_distance, v=None):
         if v == None:
             return float('inf')
         if v <= 0.0:
             return float('inf')
 
-        p_resisted = self.p_resist(t=t, v=v)
-        if p_resisted > self.p_tot:
+        # p_resisted = self.p_resist(t=t, v=v)
+        if self.p_resist(t=t, v=v) > self.p_tot:
             return float('inf')
         # v_resisted = np.cbrt(p_resisted) / self.k
-        p_available = self.p_tot - p_resisted
+        # p_available = self.p_tot - p_resisted
 
-        p_consumed = self.p_cons(v=v)
-        if p_consumed <= 0.0:
+
+        # p_consumed = self.p_cons(v=v)
+        if self.p_cons(v=v) <= 0.0:
             return float('inf')
-        # if p_consumed + p_resisted > self.p_tot:
-        #     return float('inf')
-        # return d / (v - v_resisted)
-        if p_consumed > p_available:
-            return d / (np.cbrt(p_available / self.k))
-            # return float('inf')
+        if self.p_cons(v=v) > self.p_available(t=t):
+            # return d / (np.cbrt(self.p_available(t=t) / self.k))
+            return d / self.v_limit(t=t, v=v)
         return d / v
     def fuel_for_trip(self, fuel, t=0.0, d=utils.unit_distance, v=None):
         if v == None:
