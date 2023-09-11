@@ -159,48 +159,48 @@ When applying the data one must consider data projection:
 
 ### Classes
 
-> ### Vessel
-> 
-> #### Attributes
-> 
-> - Name
-> - Main and auxiliary engine power
-> - Design speed (knots)
-> - Max velocity (meters per second)
-> - K (factor relating total power and max velocity)
-> 
-> #### Methods
-> 
-> - \_\_str\_\_: String representation of class instances
-> - p_cons: Consumed power at velocity
->
-> 	Max velocity if no velocity specified
->
-> - p_resist: Power needed to overcome ice
->
-> 	Ice-thickness 0 if no thickness specified (and zero as return value)
-> 	Max velocity if no velocity specified
->
-> - p_available: Power available at specified ice_thickness
->
-> 	Ice-thickness 0 if no thickness specified (and total power as return value)
->
-> - v_limit: Estimated max speed at specified thickness
->
-> 	Ice-thickness 0 if no thickness specified (and total velocity as return value)
->
-> - time_for_trip: Estimated time needed to complete trip of a specified distance
->
-> 	Ice-thickness 0 if no thickness specified
-> 	Distance 25000 meters (unit distance) if no distance specified
->
-> - fuel_for_trip: Estimated fuel consumed for a trip of a specified distance, at a specified ice-thickness and velocity, for a provided fuel type
->
-> 	Ice-thickness 0 if no thickness specifed
-> 	Distance 25000 meters (unit distance) if no distance specifed
->
-> - feasible_speed_vector: A small function which, for some specified step count, returns a range of velocity values, providing the decision space for vessel speeds
-> - possible_speed_vector: Same as the previous, except it takes into account the v_limit at some ice thickness
+	> ### Vessel
+	> 
+	> #### Attributes
+	> 
+	> - Name
+	> - Main and auxiliary engine power
+	> - Design speed (knots)
+	> - Max velocity (meters per second)
+	> - K (factor relating total power and max velocity)
+	> 
+	> #### Methods
+	> 
+	> - \_\_str\_\_: String representation of class instances
+	> - p_cons: Consumed power at velocity
+	>
+	> 	Max velocity if no velocity specified
+	>
+	> - p_resist: Power needed to overcome ice
+	>
+	> 	Ice-thickness 0 if no thickness specified (and zero as return value)
+	> 	Max velocity if no velocity specified
+	>
+	> - p_available: Power available at specified ice_thickness
+	>
+	> 	Ice-thickness 0 if no thickness specified (and total power as return value)
+	>
+	> - v_limit: Estimated max speed at specified thickness
+	>
+	> 	Ice-thickness 0 if no thickness specified (and total velocity as return value)
+	>
+	> - time_for_trip: Estimated time needed to complete trip of a specified distance
+	>
+	> 	Ice-thickness 0 if no thickness specified
+	> 	Distance 25000 meters (unit distance) if no distance specified
+	>
+	> - fuel_for_trip: Estimated fuel consumed for a trip of a specified distance, at a specified ice-thickness and velocity, for a provided fuel type
+	>
+	> 	Ice-thickness 0 if no thickness specifed
+	> 	Distance 25000 meters (unit distance) if no distance specifed
+	>
+	> - feasible_speed_vector: A small function which, for some specified step count, returns a range of velocity values, providing the decision space for vessel speeds
+	> - possible_speed_vector: Same as the previous, except it takes into account the v_limit at some ice thickness
 
 ## vessel-graphing.py
 
