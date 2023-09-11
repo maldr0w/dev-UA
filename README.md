@@ -159,48 +159,48 @@ When applying the data one must consider data projection:
 
 ### Classes
 
-	> ### Vessel
-	> 
-	> #### Attributes
-	> 
-	> - Name
-	> - Main and auxiliary engine power
-	> - Design speed (knots)
-	> - Max velocity (meters per second)
-	> - K (factor relating total power and max velocity)
-	> 
-	> #### Methods
-	> 
-	> - \_\_str\_\_: String representation of class instances
-	> - p_cons: Consumed power at velocity
-	>
-	> 	Max velocity if no velocity specified
-	>
-	> - p_resist: Power needed to overcome ice
-	>
-	> 	Ice-thickness 0 if no thickness specified (and zero as return value)
-	> 	Max velocity if no velocity specified
-	>
-	> - p_available: Power available at specified ice_thickness
-	>
-	> 	Ice-thickness 0 if no thickness specified (and total power as return value)
-	>
-	> - v_limit: Estimated max speed at specified thickness
-	>
-	> 	Ice-thickness 0 if no thickness specified (and total velocity as return value)
-	>
-	> - time_for_trip: Estimated time needed to complete trip of a specified distance
-	>
-	> 	Ice-thickness 0 if no thickness specified
-	> 	Distance 25000 meters (unit distance) if no distance specified
-	>
-	> - fuel_for_trip: Estimated fuel consumed for a trip of a specified distance, at a specified ice-thickness and velocity, for a provided fuel type
-	>
-	> 	Ice-thickness 0 if no thickness specifed
-	> 	Distance 25000 meters (unit distance) if no distance specifed
-	>
-	> - feasible_speed_vector: A small function which, for some specified step count, returns a range of velocity values, providing the decision space for vessel speeds
-	> - possible_speed_vector: Same as the previous, except it takes into account the v_limit at some ice thickness
+> ### Vessel
+> 
+> #### Attributes
+> 
+> - Name
+> - Main and auxiliary engine power
+> - Design speed (knots)
+> - Max velocity (meters per second)
+> - K (factor relating total power and max velocity)
+> 
+> #### Methods
+> 
+> - \_\_str\_\_: String representation of class instances
+> - p_cons: Consumed power at velocity
+>
+> 	Max velocity if no velocity specified
+>
+> - p_resist: Power needed to overcome ice
+>
+> 	Ice-thickness 0 if no thickness specified (and zero as return value)
+> 	Max velocity if no velocity specified
+>
+> - p_available: Power available at specified ice_thickness
+>
+> 	Ice-thickness 0 if no thickness specified (and total power as return value)
+>
+> - v_limit: Estimated max speed at specified thickness
+>
+> 	Ice-thickness 0 if no thickness specified (and total velocity as return value)
+>
+> - time_for_trip: Estimated time needed to complete trip of a specified distance
+>
+> 	Ice-thickness 0 if no thickness specified
+> 	Distance 25000 meters (unit distance) if no distance specified
+>
+> - fuel_for_trip: Estimated fuel consumed for a trip of a specified distance, at a specified ice-thickness and velocity, for a provided fuel type
+>
+> 	Ice-thickness 0 if no thickness specifed
+> 	Distance 25000 meters (unit distance) if no distance specifed
+>
+> - feasible_speed_vector: A small function which, for some specified step count, returns a range of velocity values, providing the decision space for vessel speeds
+> - possible_speed_vector: Same as the previous, except it takes into account the v_limit at some ice thickness
 
 ## vessel-graphing.py
 
@@ -211,3 +211,31 @@ When applying the data one must consider data projection:
 - Same as before, except slightly cleaned
 - Now uses a binary heap to improve performance
 	- Rather than needing to search the open set (or something) for the lowest score, it will simply be the first element
+- Now uses Great circle distance rather than manhattan distance in heuristic
+
+# Tasks
+1. [ ] Fuel consumption vs. Vessel speed graph
+	- [x] Basic case (only one fuel type)
+	- [x] Fuel specific cases
+	- [ ] Consider GHG emissions (Price vs. Vessel speed)
+2. [ ] Pareto frontier
+	- [ ] Plot of tradeoff between fuel consumption for vessel speeds
+	- [ ] Extend to all fuel cases
+3. [ ] Optimal route for different fuels
+	- [x] Single fuel case
+	- [ ] All fuels
+	
+	Here it would be necessary I think, to know the pareto frontier.
+	
+	The heuristic algorithm needs to know the worst case, thus the assumed price of a path using the most polluting/inefficient fuel
+	
+4. [ ] GHG emissions vs. vessel speed
+5. [ ] GHG emissions vs. ice-thickness
+6. [ ] Optimization results
+	- [ ] Table displaying all optimal values
+		- Fuel consumption
+		- Vessel speed
+		- Route segments for chosen scenarios
+7. [ ] Sensitivity analysis
+	- Analyze things like ice thickness coefficient
+	- With this, create sensitivity plot to show how changes in these params affect optimization results
