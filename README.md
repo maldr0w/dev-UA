@@ -124,27 +124,27 @@ When applying the data one must consider data projection:
 
 ### Classes
 
-> #### GHG
+> ### GHG
 > 
-> ##### Attributes
+> #### Attributes
 > 
 > - Name
 > - Factor: Emission factors for each of the GHG-types
 > 
-> ##### Methods
+> #### Methods
 > 
 > - \_\_str\_\_: String representation of class instances
+
+> ### Fuel
 > 
-> #### Fuel
-> 
-> ##### Attributes
+> #### Attributes
 > 
 > - Name
 > - Emission-factors: The amount which each fuel-type releases a certain GHG
 > - Lower heating: Net calorific value, or the amount of energy released on consumption of the fuel, used for fuel consumption calculations
 > - Price: Price per kilogram of the fuel-type
 > 
-> ##### Methods
+> #### Methods
 > 
 > - \_\_str\_\_: String representation of class instances
 > - get_price: Price for a given amount of fuel (default input weight 1kg)
@@ -159,9 +159,9 @@ When applying the data one must consider data projection:
 
 ### Classes
 
-> #### Vessel
+> ### Vessel
 > 
-> ##### Attributes
+> #### Attributes
 > 
 > - Name
 > - Main and auxiliary engine power
@@ -169,7 +169,7 @@ When applying the data one must consider data projection:
 > - Max velocity (meters per second)
 > - K (factor relating total power and max velocity)
 > 
-> ##### Methods
+> #### Methods
 > 
 > - \_\_str\_\_: String representation of class instances
 > - p_cons: Consumed power at velocity
