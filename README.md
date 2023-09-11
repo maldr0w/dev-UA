@@ -173,23 +173,29 @@ When applying the data one must consider data projection:
 > 
 > - \_\_str\_\_: String representation of class instances
 > - p_cons: Consumed power at velocity
+>
 > 	Max velocity if no velocity specified
 >
 > - p_resist: Power needed to overcome ice
+>
 > 	Ice-thickness 0 if no thickness specified (and zero as return value)
 > 	Max velocity if no velocity specified
 >
 > - p_available: Power available at specified ice_thickness
+>
 > 	Ice-thickness 0 if no thickness specified (and total power as return value)
 >
 > - v_limit: Estimated max speed at specified thickness
+>
 > 	Ice-thickness 0 if no thickness specified (and total velocity as return value)
 >
 > - time_for_trip: Estimated time needed to complete trip of a specified distance
+>
 > 	Ice-thickness 0 if no thickness specified
 > 	Distance 25000 meters (unit distance) if no distance specified
 >
 > - fuel_for_trip: Estimated fuel consumed for a trip of a specified distance, at a specified ice-thickness and velocity, for a provided fuel type
+>
 > 	Ice-thickness 0 if no thickness specifed
 > 	Distance 25000 meters (unit distance) if no distance specifed
 >
