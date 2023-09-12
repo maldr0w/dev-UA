@@ -12,4 +12,6 @@ def print_entrypoint(ep, file):
 def print_exit(ep, file):
     print(' ||\n ||\n /\n/')
     print('\texiting ' + ep + '\t(' + file + ')')
+
+k_ice = 1.00
 unit_distance = 25000.0

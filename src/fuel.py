@@ -44,7 +44,8 @@ class Fuel:
     def equiv_tons_co2(self, weight=1.0):
         return (np.sum(self.get_gwp(weight=weight))/ 1_000_000.0)
     def get_emission_price(self, weight=1.0):
-        return 20.0 * (np.sum(self.get_gwp(weight=weight)) / 1_000_000.0)
+        return 20.0 * self.equiv_tons_co2(weight=weight)
+        # return 20.0 * (np.sum(self.get_gwp(weight=weight)) / 1_000_000.0)
 fuel_list = [
     Fuel('diesel', 0.78, 11.83, 
         co2=3206., ch4=0.06, n2o=0.15),
