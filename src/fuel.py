@@ -40,7 +40,10 @@ class Fuel:
     def get_emissions(self,weight=1.0):
         return [weight * type.factor for type in self.emission_factors]
     def get_gwp(self,weight=1.0):
-        return [weight * type.factor * get_gwp(type.name) for type in self.emission_factors]
+        if self.emission_factors.__len__() > 0:
+            return [weight * type.factor * get_gwp(type.name) for type in self.emission_factors]
+        else:
+            return [0.0]
     def equiv_tons_co2(self, weight=1.0):
         return (np.sum(self.get_gwp(weight=weight))/ 1_000_000.0)
     def get_emission_price(self, weight=1.0):

@@ -214,22 +214,22 @@ When applying the data one must consider data projection:
 - Now uses Great circle distance rather than manhattan distance in heuristic
 
 # Tasks
-1. [ ] Fuel consumption vs. Vessel speed graph
+1. [x] Fuel consumption vs. Vessel speed graph
 	- [x] Basic case (only one fuel type)
 	- [x] Fuel specific cases
-	- [ ] Consider GHG emissions (Price vs. Vessel speed)
+	- [x] Consider GHG emissions (Price vs. Vessel speed)
 2. [ ] Pareto frontier
 	- [ ] Plot of tradeoff between fuel consumption for vessel speeds
 	- [ ] Extend to all fuel cases
-3. [ ] Optimal route for different fuels
+3. [x] Optimal route for different fuels
 	- [x] Single fuel case
-	- [ ] All fuels
+	- [x] All fuels
 	
 	Here it would be necessary I think, to know the pareto frontier.
 	
 	The heuristic algorithm needs to know the worst case, thus the assumed price of a path using the most polluting/inefficient fuel
 	
-4. [ ] GHG emissions vs. vessel speed
+4. [x] GHG emissions vs. vessel speed
 5. [ ] GHG emissions vs. ice-thickness
 6. [ ] Optimization results
 	- [ ] Table displaying all optimal values

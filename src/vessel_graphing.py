@@ -439,31 +439,69 @@ def g_emis_price(ax, values):
 def create_graph(t=0.0):
     ship_count = vessel.ship_list.__len__()
     # fig, (dur_ax, cons_kg_ax, cons_price_ax, emis_tn_ax, emis_price_ax, total_price_ax) = plt.subplots(ncols = ship_count, nrows=6, sharey='row', sharex='col')
-    fig, (dur_ax, cons_kg_ax, cons_price_ax, emis_tn_ax, emis_price_ax) = plt.subplots(ncols = ship_count, nrows=5, sharey='row', sharex='col')
-    for i in np.arange(0, ship_count):
-        ship = vessel.ship_list[i]
-        velocities = np.insert(ship.feasible_speed_vector(), 0, 0.0)
-        (cons_kg, cons_price, emis_tn, emis_price) = data.data_list(ship, t=t)
-        # cons_kg = [(f, []) for f ]
-    # g_data_per_fuel(ax, values, 'Fuel consumed [kg]')
-        # g_data(dur_ax[i], 
-        g_data(dur_ax[i], data.trip_duration_list(ship, t=t), ship.name, 'Time [hours]')
-        g_data_per_fuel(cons_kg_ax[i], cons_kg, ship.name, 'Fuel consumed [kg]')
-        # g_cons(ship, cons_ax[i], t=t)
-        # g_time(ship, time_ax[i], t=t)
-        g_data_per_fuel(cons_price_ax[i], cons_price, ship.name, 'Cost [€ / kg fuel]')
-        # g_cons_price(ship, price_ax[i], t=t)
-        g_data_per_fuel(emis_tn_ax[i], emis_tn, ship.name, 'Emission [tons CO2]')
-        g_data_per_fuel(emis_price_ax[i], emis_price, ship.name, 'Cost [€ / tons CO2]')
-        # g_emis_price(ship, emission_price_ax[i], t=t)
-        # g_emis(ship, emission_ax[i], t=t)
-        # g_data_per_fuel(total_price_ax[i], np.sum(np.array((cons_price, emis_price))), ship.name, 'Total cost [€]')
+    fig, (dur_ax, total_price_ax, cons_kg_ax, cons_price_ax, emis_tn_ax, emis_price_ax) = plt.subplots(ncols = ship_count, nrows=6, sharey='row', sharex='col')
+    for i, s in enumerate(vessel.ship_list):
+        (d_ax, c_kg_ax, c_pr_ax, e_tn_ax, e_pr_ax, t_pr_ax) = (dur_ax[i], cons_kg_ax[i], cons_price_ax[i], emis_tn_ax[i], emis_price_ax[i], total_price_ax[i])
+        g_data(d_ax, data.trip_duration_list(s, t=t), s.name, 'Time [hours]') 
+        for j, f in enumerate(fuel.fuel_list):
+            velocities = s.zero_initial_speed_vector()
+
+            weights = [s.fuel_for_trip(f, t=t, v=v) for v in velocities]
+            g_setup(s.name, c_kg_ax, 'Fuel [kg]')
+            c_kg_ax.plot(velocities, weights, label=f.name) 
+            c_kg_ax.legend(loc='upper left')
+        # ax.plot(velocities, ds, label=f.name)
+
+            cons_price = [f.get_price(weight=weight) for weight in weights]
+            g_setup(s.name, c_pr_ax, 'Fuel [€]')
+            c_pr_ax.plot(velocities, cons_price, label=f.name)
+            c_pr_ax.legend(loc='upper left')
+
+            emis_tn = [f.equiv_tons_co2(weight=weight) for weight in weights]
+            g_setup(s.name, e_tn_ax, 'Emission [tons]')
+            e_tn_ax.plot(velocities, emis_tn, label=f.name)
+            e_tn_ax.legend(loc='upper left')
+
+            emis_price = [f.get_emission_price(weight=weight) for weight in weights]
+            g_setup(s.name, e_pr_ax, 'Emission [€]')
+            e_pr_ax.plot(velocities, emis_price, label=f.name)
+            e_pr_ax.legend(loc='upper left')
+
+            # total_price = [a + b for a, b in (cons_price, emis_price)]
+            total_price = []
+            for a in cons_price:
+                total_price.append(a)
+            for i, b in enumerate(emis_price):
+                total_price[i] += b
+    
+            g_setup(s.name, t_pr_ax, 'Total [€]')
+            t_pr_ax.plot(velocities, total_price, label=f.name)
+            t_pr_ax.legend(loc='upper left')
+            
+    #     ship = vessel.ship_list[i]
+    #     velocities = np.insert(ship.feasible_speed_vector(), 0, 0.0)
+    #     (cons_kg, cons_price, emis_tn, emis_price) = data.data_list(ship, t=t)
+    #     # cons_kg = [(f, []) for f ]
+    # # g_data_per_fuel(ax, values, 'Fuel consumed [kg]')
+    #     # g_data(dur_ax[i], 
+    #     g_data(dur_ax[i], data.trip_duration_list(ship, t=t), ship.name, 'Time [hours]')
+    #     g_data_per_fuel(cons_kg_ax[i], cons_kg, ship.name, 'Fuel consumed [kg]')
+    #     # g_cons(ship, cons_ax[i], t=t)
+    #     # g_time(ship, time_ax[i], t=t)
+    #     g_data_per_fuel(cons_price_ax[i], cons_price, ship.name, 'Cost [€ / kg fuel]')
+    #     # g_cons_price(ship, price_ax[i], t=t)
+    #     g_data_per_fuel(emis_tn_ax[i], emis_tn, ship.name, 'Emission [tons CO2]')
+    #     g_data_per_fuel(emis_price_ax[i], emis_price, ship.name, 'Cost [€ / tons CO2]')
+    #     # g_emis_price(ship, emission_price_ax[i], t=t)
+    #     # g_emis(ship, emission_ax[i], t=t)
+    #     # g_data_per_fuel(total_price_ax[i], np.sum(np.array((cons_price, emis_price))), ship.name, 'Total cost [€]')
 
     fig.set_size_inches(18, 20)
     fig.suptitle('Fuel consumption in kilogrammes, for a 25km voyage')
     plt.savefig('images/cons_at_t' + str(t) + '.png')
 
-create_graph()
-create_graph(t=5.0)
+if __name__ == '__main__':
+    create_graph()
+    create_graph(t=5.0)
 
 utils.print_exit(__name__, __file__)

@@ -113,6 +113,7 @@ def save_coord_map(name):
     print("Saving figure...")
     plt.savefig('images/' + str(name) + '.png')
     print("Finished.")
+    # plt.close()
     utils.print_separator()
 
 print("Generating the distance correction map...")
