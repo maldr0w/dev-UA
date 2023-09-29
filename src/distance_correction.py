@@ -9,17 +9,19 @@ import utils
 utils.print_entrypoint(__name__, __file__)
 
 DATA_FILE = 'ice_thickness_2022.nc'
-
+# Open xArray dataset, find the size in meters
 dataset = xr.open_dataset(DATA_FILE)
-meters = (np.shape(dataset['sea_ice_thickness'].coords['xc'])[0] - 1) * 25000
-print(np.shape(dataset['sea_ice_thickness'].coords['xc'])[0] * 25)
-# projdata = dataset['Lambert_Azimuthal_Grid']
-# meters = 10775000
+meters = (np.shape(dataset['sea_ice_thickness'].coords['xc'])[0] - 1) * utils.unit_distance
+
+# print(np.shape(dataset['sea_ice_thickness'].coords['xc'])[0] * 25)
+ 
 def reinit_map():
+    '''
+    Reinitialize map for plot points.
+    Largely boiler-plate, but made into a function for ease of calling's sake.
+    '''   
     ax, fig = plt.subplots()
     m = Basemap(width=meters, height=meters, projection='laea', lon_0=0., ellps='WGS84', lat_0=90., resolution='i')
-    # m.drawcoastlines()
-    # m.fillcontinents(color='gray',lake_color='gray')
     m.drawparallels(np.arange(16.6239,90.,20.))
     m.drawmeridians(np.arange(-180.,180.0,20.))
     m.drawmapboundary(fill_color='gray')
@@ -27,22 +29,28 @@ def reinit_map():
 
 
 def plot_coord(lon, lat, lon_west=False, c='r', map=None):
+    '''
+    Function to plot a coordinate on the map given.
+    '''
     if lon_west:
         lon = 360. - lon
     x, y = map(lon, lat)
     map.plot(x, y, marker=',', color=c)
 
+# Access icedata (for some reason, there is a time dimension)
 TIME = 0
 icedata = dataset['sea_ice_thickness'].values[TIME]
 
-# print(icedata)
 
+
+
+# Shift coordinates based on the finding in terms of scale
+# This makes the top-left 0 m, 0 m
+print("Shifting coordinates...")
 def shift(c):
     return (1000 * c) + (meters / 2)
 
 vshift = np.vectorize(shift)
-
-print("Shifting coordinates...")
 x_coords = vshift(dataset['sea_ice_thickness'].coords['xc'])
 y_coords = vshift(dataset['sea_ice_thickness'].coords['yc'])
 print("Finished")
@@ -56,11 +64,8 @@ mapdata = np.empty(np.shape(icedata))
 for y, row in enumerate(dataset['status_flag'][TIME].values):
     for x, status_flag in enumerate(row):
         match status_flag:
-            # If flag is 1: No data
+            # If flag is 1: No data (mostly ocean outside the satellites range)
             #            2: Open ocean
-            #            5: Retrieval failed
-            # We simply assume these to be okay for now
-            # case 1 | 2 | 5:
             case 1 | 2:
                 mapdata[y, x] = -0.5
             case _:

@@ -3,9 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import utils
 
+
+
 utils.print_entrypoint(__name__, __file__)
-
-
 import vessel_graphing as vess_data
 import vessel
 import fuel
@@ -13,6 +13,9 @@ import distance_correction as dist_corr
 
 coordinate_data = dist_corr.dataset['sea_ice_thickness'].coords
 latitude_data, longitude_data = coordinate_data['lat'].to_numpy(), coordinate_data['lon'].to_numpy()
+mean_ice_thickness = np.nanmean(dist_corr.mapdata) # (1 * np.nanstd(only_values_ice_thickness))
+HEURISTIC_FUEL = fuel.fuel_list[2]
+HEURISTIC_THICKNESS = 0.0
 
 def find_closest_index(coordinate):
     '''
@@ -38,37 +41,39 @@ from scipy import stats
 ICE_THRESHOLD = 0.6
 # only_values_ice_thickness = np.extract(np.invert(np.logical_or(np.isnan(dist_corr.mapdata), np.less(dist_corr.mapdata, ICE_THRESHOLD))), dist_corr.mapdata)
 
-mean_ice_thickness = np.nanmean(dist_corr.mapdata) # (1 * np.nanstd(only_values_ice_thickness))
-print("Mean ice thickness " + str(mean_ice_thickness))
 def great_circle(lat1, lon1, lat2, lon2):
-    a = np.deg2rad(lat1)
-    b = np.deg2rad(lat2)
-    x = np.deg2rad(lon1)
-    y = np.deg2rad(lon2)
-    c = abs(x - y)
-    return 112320 * np.rad2deg(
-        np.arccos(
-            (np.cos(a) * np.cos(b) * np.cos(c))
-            + (np.sin(a) * np.sin(b))
-        )
-    )
-from enum import Enum
-class Optimization(Enum):
-    DISTANCE = 1
-    CONSUMPTION = 2
-    
-def heuristic(node,goal,trip_fuel,cons_weight, emis_weight, estimate_thickness=False,ship=vessel.ship_list[0], mean_th=0.0):
+    # a = np.deg2rad(lat1)
+    # b = np.deg2rad(lat2)
+    # x = np.deg2rad(lon1)
+    # y = np.deg2rad(lon2)
+    radius = 6_371_000
+    the1, phi1 = np.deg2rad(lat1), np.deg2rad(lon1)
+    the2, phi2 = np.deg2rad(lat2), np.deg2rad(lon2)
+    a = np.sin((the2 - the1) / 2.0) ** 2.0
+    b = np.cos(the1) * np.cos(the2) * (np.sin((phi2 - phi1) / 2.0) ** 2.0) 
+    return (2 * radius) * np.arcsin(np.sqrt(a + b))
+    # c = abs(x - y)
+    # return 112320 * np.rad2deg(
+    #     np.arccos(
+    #         (np.cos(a) * np.cos(b) * np.cos(c))
+    #         + (np.sin(a) * np.sin(b))
+    #     )
+    # )
+# from enum import Enum
+# class Optimization(Enum):
+#     DISTANCE = 1
+#     CONSUMPTION = 2
+
+def cost(node, neighbor, ship, trip_fuel, unit_rate):
     '''
-    heuristic estimate (Great circle distance)
-    estimate of distance between specified node and goal node
-    
-    estimate_thickness (default: False) will determine whether
-    value returned is based on just distance, or
-    ice thickness as well 
-        '''
-            
+    cost function [g(n)]
+
+    Using the same calculation as the heuristic, 
+    this function returns the actual cost, using the average of the
+    node thickness and the neighbor thickness, as well as a specified fuel
+    '''
     x1, y1 = node
-    x2, y2 = goal
+    x2, y2 = neighbor
 
     lat1 = latitude_data[y1, x1]
     lat2 = latitude_data[y2, x2]
@@ -76,35 +81,52 @@ def heuristic(node,goal,trip_fuel,cons_weight, emis_weight, estimate_thickness=F
     lon1 = longitude_data[y1, x1]
     lon2 = longitude_data[y2, x2]
 
-    estimated_distance = great_circle(lat1, lon1, lat2, lon2)
+    # estimated_distance = great_circle(lat1, lon1, lat2, lon2)
+    estimated_thickness = 0.5 * (dist_corr.mapdata[y1, x1] + dist_corr.mapdata[y2, x2])
+    estimated_distance = utils.unit_distance * np.sqrt((abs(x1 - x2) ** 2) + (abs(y1 - y2) ** 2)) 
 
-    if estimate_thickness:
-        estimated_thickness = 0.5 * (dist_corr.mapdata[y1, x1] + dist_corr.mapdata[y2, x2])
-        kg_consumed = ship.fuel_for_trip(trip_fuel,t=estimated_thickness, v=ship.v_limit(t=estimated_thickness), d=estimated_distance)
-        cons_price = cons_weight * trip_fuel.get_price(kg_consumed)
-        
-        emis_price = np.nan_to_num(trip_fuel.get_emission_price(kg_consumed), posinf=0.0, neginf=0.0)
-        if emis_price != None:
-            if np.isnan(emis_price):
-                print('isnan')
-            return cons_price + (emis_weight * emis_price)
-        else:
-            return cons_price
-        # return cons_price + emis_price
-    # In this case, we will use the mean ice thickness, since we are guessing (using a heuristic fuel)
-    else:
-        # mean_ice_thickness = np.nanmean(dist_corr.mapdata[y1:y2 + 1, x1:x2 + 1])
-        # print(mean_ice_thickness)
-        velocity = ship.v_limit(t=mean_ice_thickness)
-        # kg_consumed = ship.fuel_for_trip(trip_fuel,v=velocity,d=estimated_distance, t=mean_ice_thickness)
-        worst_case_consumed = ship.fuel_for_trip(fuel.fuel_list[4], v=velocity, d=estimated_distance, t=mean_ice_thickness)
-        cons_price = cons_weight * fuel.fuel_list[4].get_price(worst_case_consumed)
-        worst_case_emitted = ship.fuel_for_trip(fuel.fuel_list[1], v=velocity, d=estimated_distance, t=mean_ice_thickness)
-        emis_price = emis_weight * fuel.fuel_list[1].get_emission_price(worst_case_emitted)
-        return cons_price + emis_price
-        # return (cons_weight * fuel.fuel_list[4].get_price(worst_case_consumed)) + (emis_weight * fuel.fuel_list[1].get_emission_price(worst_case_emitted))
-    # kg_consumed = ship.fuel_for_trip(fuel_type,v=ship.v_limit(t=estimated_distance), d=estimated_distance)
-    # return (cons_weight * trip_fuel.get_price(kg_consumed)) + (emis_weight * trip_fuel.get_emission_price(kg_consumed))
+    return ship.get_costs(trip_fuel, ship.v_limit(estimated_thickness), estimated_distance, estimated_thickness)
+    # return (1 + estimated_thickness) * estimated_distance
+    # return estimated_distance
+    
+# Methanol as comparison, gives the cheapest overall cost
+def get_heuristic_unit_rate(ship, fuel_type, heuristic_thickness=0.0):
+    # return ship.get_trip_consumption(fuel_type, ship.v_limit(HEURISTIC_THICKNESS), thickness=HEURISTIC_THICKNESS)
+    return ship.get_costs(fuel_type, ship.v_limit(heuristic_thickness) / 2, utils.unit_distance, heuristic_thickness)
+
+def heuristic(node, goal, ship, fuel_type, unit_rate):
+    '''
+    heuristic estimate (Great circle distance) [h(n)]
+    estimate of distance between specified node and goal node
+    
+    Using methanol as a heuristic fuel due to it being found to be the cheapest,
+    and assuming no ice during the journey, an optimistic estimate is given    
+        '''
+            
+    x1, y1 = node
+    x2, y2 = goal
+
+    # lat1 = latitude_data[y1, x1]
+    # lat2 = latitude_data[y2, x2]
+
+    # lon1 = longitude_data[y1, x1]
+    # lon2 = longitude_data[y2, x2]
+    
+
+    # estimated_distance = great_circle(lat1, lon1, lat2, lon2)
+    estimated_distance = utils.unit_distance * max(abs(x1 - x2), abs(y1 - y2))
+    # estimated_distance = np.sqrt((abs(x1 - x2) ** 2) + (abs(y1 - y2) ** 2))
+    # estimated_distance = np.sqrt((abs(lat1 - lat2) ** 2) + (abs(lon1 - lon2) ** 2))
+    # return estimated_distance * 25000.
+    # weight = heuristic_unit_rate * (estimated_distance / 25000.0)
+    # weight = heuristic_unit_rate * estimated_distance
+    # return heuristic_unit_rate * (estimated_distance / 25000.0)
+    # return estimated_distance * (1.0 / (np.e ** mean_ice_thickness)) 
+    # return estimated_distance
+    return ship.get_costs(fuel_type, ship.v_limit(0.0), estimated_distance, 0.0)
+    # return 25000.0 * estimated_distance
+
+    # return ship.get_costs(fuel_type, ship.v_limit(HEURISTIC_THICKNESS), estimated_distance, HEURISTIC_THICKNESS) 
 
 def reconstruct_path(current_node,came_from): 
     '''
@@ -123,31 +145,23 @@ from collections import defaultdict
 from heapq import heapify, heappush, heappop, nsmallest
 max_cons_weight = 1.0
 max_emis_weight = 25.0
-def A_star_search_algorithm(start_coordinate, end_coordinate, trip_fuel, heuristic_fuel=None, ship=vessel.ship_list[0], cons_weight=max_cons_weight, emis_weight=max_emis_weight):
+def A_star_search_algorithm(start_coordinate, end_coordinate, trip_fuel, ship):
     '''
     returns most optimal path between start_coordinate and end_coordinate
     path is chosen based on cost
         '''
-    print('\tStarting A*...')
+    print('\tStarting A*... (this may in some cases take a while)')
+
+    unit_rate = get_heuristic_unit_rate(ship, trip_fuel)
 
     start_y, start_x = find_closest_index(start_coordinate) 
     goal_y, goal_x = find_closest_index(end_coordinate)
 
-    neighbors = [(0, 1), (0, -1), (1, 0), (1, 1), (1, -1), (-1, 0), (-1, -1), (-1, 1)]
     y_res, x_res = 1, 1
     start = (x_res * start_x, y_res * start_y)
     goal = (x_res * goal_x, y_res * goal_y)
 
-    # initializing sets for exploring and disregarding nodes
 
-    # Using binheap, since the smallest element will always
-    # be the first, drastically speeding up the search
-    open_heap = []
-    heapify(open_heap)
-
-    open_set = {start}  # will hold explorable nodes in a unordered list (set)
-    came_from = {}  # will hold parent nodes, empty on init
-    goal_thickness = dist_corr.mapdata[goal_y, goal_x]
     # defining scoreing
     g_score = {}  # cost from start node to each node
     f_score = {}
@@ -162,45 +176,59 @@ def A_star_search_algorithm(start_coordinate, end_coordinate, trip_fuel, heurist
     # Estimate of cost to reach the current node
     g_score[start] = 0.
     # Estimate of cost from start node to goal node for each node
-    f_score[start] = heuristic(start, goal, trip_fuel, cons_weight, emis_weight)
+    f_score[start] = g_score[start] + heuristic(start, goal, ship, trip_fuel, unit_rate)
+    # initializing sets for exploring and disregarding nodes
+    came_from = {}  # will hold parent nodes, empty on init
 
+    # The closed_set will hold previously explored nodes
+    closed_set = []
+
+    # The open set (heap) will hold currently explorable nodes
+    # Using binheap, since the smallest element will always
+    # be the first, drastically speeding up the search
+    open_heap = []
+    heapify(open_heap)
     heappush(open_heap, (f_score[start], start))
 
+    neighbors = [(0, 1), (0, -1), (1, 0), (1, 1), (1, -1), (-1, 0), (-1, -1), (-1, 1)]
     # iterating over available nodes
     while open_heap:
         # Get lowest f_score element
-        current_node = heappop(open_heap)[1]
-
-        # curr_x, curr_y = current_node
-        # slice = dist_corr.mapdata[curr_y:goal_y, curr_x:goal_x]
-        # if np.shape(slice)[0] == 0 or np.shape(slice)[1] == 0:
-        #     mean_thickness = 0.0
-        # else:
-        #     mean_thickness = np.nanmean(slice)
-        #     if np.isnan(mean_thickness):
-        #         mean_thickness = float('inf')
+        current_f_score, current_node = heappop(open_heap)
+        closed_set.append(current_node)
 
         # If at goal, return the path used
         if current_node == goal:
+            # f_final = current_f_score
             print('\tFinished.\n\tReconstructing path...')
-            return reconstruct_path(current_node, came_from)
+            return reconstruct_path(current_node, came_from), current_f_score
 
         # iterating through current node's neighbors
         for dx, dy in neighbors:
-            x, y = current_node
-            neighbor = (x + dx, y + dy)
-            # If neighbor is inside chosen indices
+            # x, y = current_node
+            neighbor = (current_node[0] + dx, current_node[1] + dy)
+            # If neighbor is inside chosen bounds
             if 0 <= neighbor[0] < x_bound and 0 <= neighbor[1] < y_bound:
+                # Proper control flow requires this statement to fail,
+                # but the previous to pass
                 if np.isnan(dist_corr.mapdata[neighbor[1], neighbor[0]]):
-                    # Either land, or otherwise meaningless data
+                    # Indeterminate data, proceed to next iteration
                     continue
+                # if neighbor is in closed set, due to our heuristic,
+                # we can guarantee a more optimal path there has been found,
+                # so we can skip it
+                if neighbor in closed_set:
+                    continue
+                # At this point the following else-statement will be skipped,
+                # and the node will be considered OK
             else:
-                # New pos OOB
+                # Current node is OOB, proceed to next iteration
                 continue
 
-            current_cost = heuristic(current_node, neighbor, trip_fuel, cons_weight, emis_weight, estimate_thickness=True)
-            tentative_g_score = g_score[current_node] + current_cost  # changes if a smaller cost path is found
+            # Potential g_score of neighbor
+            tentative_g_score = g_score[current_node] + cost(current_node, neighbor, ship, trip_fuel, unit_rate)  # changes if a smaller cost path is found
 
+            # checks if the current path to neighbor is better than previous (or none)
             if tentative_g_score < g_score[neighbor]:
                 # set current node as parent node
                 came_from[neighbor] = current_node
@@ -209,33 +237,16 @@ def A_star_search_algorithm(start_coordinate, end_coordinate, trip_fuel, heurist
                 g_score[neighbor] = tentative_g_score 
 
                 # total cost from start node to goal node via this neighbor
-                f_score[neighbor] = tentative_g_score + heuristic(neighbor, goal, trip_fuel, cons_weight, emis_weight)
+                f_score[neighbor] = g_score[neighbor] + heuristic(neighbor, goal, ship, trip_fuel, unit_rate)
 
                 # checking if neighbor has been explored
-                if neighbor not in [i[1] for i in open_heap]:
-                    heappush(open_heap, (f_score[neighbor], neighbor))  # add neighbor to set of explorable nodes
+                # if neighbor not in [i[1] for i in open_heap]:
+                #     heappush(open_heap, (f_score[neighbor], neighbor))  # add neighbor to set of explorable nodes
+                heappush(open_heap, (f_score[neighbor], neighbor))
 
     # if no path has been found 
     print("Search failed!")
-    return reconstruct_path(current_node, came_from)
-
-# defining start and end coordinates (lat,lon)
-start_coordinate = (66.898,-162.596)
-end_coordinate = (68.958, 33.082)
-
-# import distance_correction as dist_corr
-
-KOTZEBUE = (66.898, -162.596)
-MURMANSK = (68.958, 33.082)
-REYKJAVIK = (64.963, 19.103)
-TASIILAP = (65.604, -37.707)
-    
-coordinates = [
-    [KOTZEBUE, MURMANSK],
-    [MURMANSK, REYKJAVIK],
-    [REYKJAVIK, TASIILAP],
-    [TASIILAP, MURMANSK]
-]
+    return reconstruct_path(current_node, came_from), current_f_score
 
 def plot_path(path):
     map = dist_corr.init_map()
@@ -246,96 +257,71 @@ def plot_path(path):
     ]
     print('Finished.')
 
-if __name__ == '__main__':
-    # If file is ran as main, do one profiled run
+
+def run_search(start, end):
+    import fuel
+    import vessel
+    path, score = A_star_search_algorithm(start, end, fuel.fuel_list[0], ship=vessel.ship_list[0])
+    if path != None:
+        import distance_correction
+        plot_path(path)
+        distance_correction.save_coord_map(str(start) + '_' + str(end) + '_' + str(score) + '€')
+        print ('New path available in images directory!')
+
+
+# TESTING SECTION
+
+# defining start and end coordinates (lat,lon)
+start_coordinate = (66.898,-162.596)
+end_coordinate = (68.958, 33.082)
+
+# import distance_correction as dist_corr
+
+MONGSTAD = ('Mongstad', (60.810, 5.032))
+MIZUSHIMA = ('Mizushima', (34.504, 133.714))
+KOTZEBUE = ('Kotzebue', (66.898, -162.596))
+MURMANSK = ('Murmansk', (68.958, 33.082))
+REYKJAVIK = ('Reykjavik', (64.963, 19.103))
+TASIILAP = ('Tasiilap', (65.604, -37.707))
+    
+coordinates = [
+    [KOTZEBUE, MURMANSK],
+    [MURMANSK, REYKJAVIK],
+    [REYKJAVIK, TASIILAP],
+    [TASIILAP, MURMANSK]
+]
+
+def plot_between(start_place, end_place, fuel_type, ship):
+    path, score = A_star_search_algorithm(start_place[1], end_place[1], fuel_type, ship=ship)
+    plot_path(path)
+    dist_corr.save_coord_map(start_place[0] + ' to ' + end_place[0] + '(' + str(score) + ', ' + fuel_type.name + ')')
+def test():
     import cProfile, pstats
     profiler = cProfile.Profile()
     print("Starting profiling...")
     profiler.enable()
-    # for start_coordinate, end_coordinate in coordinates:
-    path = A_star_search_algorithm(start_coordinate, end_coordinate, fuel.fuel_list[0], fuel.fuel_list[4])
+    plot_between(MURMANSK, KOTZEBUE, fuel.fuel_list[0], vessel.ship_list[0])
     profiler.disable()
     print("Dumping stats...")
     stats = pstats.Stats(profiler).sort_stats('ncalls')
     stats.strip_dirs()
     stats.dump_stats('new_star_profiling')
     print("Finished.")
-    plot_path(path)
-    dist_corr.save_coord_map('Murmansk_to_alaska')
 
+# plot_between(MONGSTAD, MIZUSHIMA, HEURISTIC_FUEL, vessel.ship_list[0]) 
+# plot_between(MONGSTAD, KOTZEBUE, HEURISTIC_FUEL, vessel.ship_list[0]) 
+# plot_between(KOTZEBUE, MURMANSK, HEURISTIC_FUEL, vessel.ship_list[0]) 
+# plot_between(KOTZEBUE, REYKJAVIK, HEURISTIC_FUEL, vessel.ship_list[0]) 
+# plot_between(KOTZEBUE, TASIILAP, HEURISTIC_FUEL, vessel.ship_list[0]) 
 # 61.092643338340345, -20.37209268308615
 # 59.55292944551115, 172.49462664899926
 
-path = A_star_search_algorithm((61.093, -20.372), (55.552, 172.495), fuel.fuel_list[0], fuel.fuel_list[4])
-plot_path(path)
-dist_corr.save_coord_map('Tasiilap_to_reykjavik')
-
+# plot_between(start_coordinate, end_coordinate, HEURISTIC_FUEL)
 # for fuel_type in fuel.fuel_list:
-#     path = A_star_search_algorithm((61.093, 1.372), (55.552, 172.495), fuel_type=fuel_type)
-#     plot_path(path)
-#     dist_corr.save_coord_map('PxtoPy' + fuel_type.name)
-
-# Cheapest overall case
-#  Methanol is cheapest, Hydrogen is most expensive
-
-# path = A_star_search_algorithm((61.093, -20.372), (55.552, 172.495), fuel.fuel_list[2], fuel.fuel_list[4])
-# plot_path(path)
-# dist_corr.save_coord_map('Comparing Methanol to Hydrogen-Heuristic')
-
-# path = A_star_search_algorithm((61.093, -20.372), (55.552, 172.495), fuel.fuel_list[2], fuel.fuel_list[2])
-# plot_path(path)
-# dist_corr.save_coord_map('Comparing Methanol to Methanol-Heuristic')
-
-# path = A_star_search_algorithm((61.093, -20.372), (55.552, 172.495), fuel.fuel_list[4], fuel.fuel_list[4])
-# plot_path(path)
-# dist_corr.save_coord_map('Comparing Hydrogen to Hydrogen-Heuristic')
-
-print('Checking all fuel cases against most expensive')
-
-print('Total price: Heuristic - Hydrogen')
-print('Price of consumption: Heuristic - Hydrogen')
-print('Price of emission: Heuristic - Natural Gas')
-for fuel_type in fuel.fuel_list:
-    if fuel_type.name != 'hydrogen' and fuel_type.name != 'dme':
-        path = A_star_search_algorithm(start_coordinate, end_coordinate, fuel_type, cons_weight=0.0)
-        if path != None:
-            plot_path(path)
-            dist_corr.save_coord_map(fuel_type.name + ': (100% emission price)')
-
-    path = A_star_search_algorithm(start_coordinate, end_coordinate, fuel_type, emis_weight=0.75 * max_emis_weight, cons_weight= 0.25 * max_cons_weight)
-    if path != None:
-        plot_path(path)
-        dist_corr.save_coord_map(fuel_type.name + ': (25% consumption price-75% emission price, default)')
-
-    path = A_star_search_algorithm(start_coordinate, end_coordinate, fuel_type, emis_weight=0.66 * max_emis_weight, cons_weight= 0.33 * max_cons_weight)
-    if path != None:
-        plot_path(path)
-        dist_corr.save_coord_map(fuel_type.name + ': (33% consumption price-66% emission price, default)')
-
-    path = A_star_search_algorithm(start_coordinate, end_coordinate, fuel_type)
-    if path != None:
-        plot_path(path)
-        dist_corr.save_coord_map(fuel_type.name + ': (50% consumptionp price-50% emission price, default)')
-
-    path = A_star_search_algorithm(start_coordinate, end_coordinate, fuel_type, emis_weight=0.33 * max_emis_weight, cons_weight= 0.66 * max_cons_weight)
-    if path != None:
-        plot_path(path)
-        dist_corr.save_coord_map(fuel_type.name + ': (66% consumption price-33% emission price, default)')
-    
-    path = A_star_search_algorithm(start_coordinate, end_coordinate, fuel_type, emis_weight=0.25 * max_emis_weight, cons_weight=0.5 * max_cons_weight)
-    if path != None:
-        plot_path(path)
-        dist_corr.save_coord_map(fuel_type.name + ': (75% consumption price-25% emission price)')
-
-    path = A_star_search_algorithm(start_coordinate, end_coordinate, fuel_type, emis_weight=0.0)
-    if path != None:
-        plot_path(path)
-        if fuel_type.name == 'natural gas':
-            dist_corr.save_coord_map('Most polluting path (Natural Gas - minimize fuel cost only)')
-        elif fuel_type.name == 'hydrogen':
-            dist_corr.save_coord_map('Most cost conserving path (Hydrogen - minimize fuel cost only)')
-        else:
-            dist_corr.save_coord_map(fuel_type.name + ': (100% consumption price)') 
+#     path, score = A_star_search_algorithm(start_coordinate, end_coordinate, fuel_type)
+#     if path != None:
+#         plot_path(path)
+#         dist_corr.save_coord_map(start_coordinate.__str__() + ' - ' + end_coordinate.__str__() + '(' + fuel_type.name + ', ' + str(score) + ')')
     
 # path = A_star_search_algorithm((61.093, 1.372), (55.552, 172.495), fuel_type=fuel.fuel_list[1])
 # plot_path(path)

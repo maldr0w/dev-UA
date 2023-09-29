@@ -14,89 +14,62 @@ class Vessel:
     def __str__(self):
         return f"{self.name.upper()}\n\tMain engine: {self.main_eng_pow} kW\n\tAuxiliary engine: {self.aux_eng_pow}\n\tDesign speed: {self.design_speed}\n"
 
-    def p_cons(self, v=None):
-        if v == None:
-            return self.k * (self.v_max ** 3)
-        else:
-            return self.k * (v ** 3)
+    def p_consumed(self, velocity):
+        return self.k * (velocity ** 3)
 
-    def p_resist(self, t=0.0, i_f=0.47, v=None):
-        if v == None:
-            return (i_f * self.k) * (self.v_max ** 3) * t
-            # p = (i_f * self.k) * (self.v_max ** 3) * t
-            # if p > self.p_tot:
-            #     return float('inf')
-            # return p
-        else:
-            return (i_f * self.k) * (v ** 3) * t
+    def p_resist(self, velocity, thickness, i_f=0.54, ice_alpha=0.2, ice_beta=0.46):
+        # Exponential function, gives slightly off-linear slope
+        # maps ice thickness (0-11.5 m) to a percentage (0.00-1.00p)
+        # 0.111 0.2
+        # ice_term = (ice_alpha * (np.e ** (ice_beta * thickness))) - ice_alpha 
+        # 0.2 0.46
+        # ice_term = ice_alpha * np.sqrt((2 * thickness) / ice_beta)
+        # ice_term = (1/11.5) * thickness
+        ice_term = thickness * i_f
+        # ice_term = (-1.0 * (1 / (thickness + 1))) + 1.2
+        # return self.k * (velocity ** 3) * (i_f * thickness)
+        # return self.k * (velocity ** 3) * ((ice_alpha * (np.e ** (ice_beta * thickness))) - ice_alpha)
+        return self.k * (velocity ** 3) * ice_term
 
-    def p_available(self, t=0.0, v=None):
-        return self.p_tot - self.p_resist(t=t, v=v)
+    def p_available(self, velocity, thickness):
+        return self.p_tot - self.p_resist(velocity, thickness)
 
-    def p_insufficient(self, t=0.0, v=None):
-        return self.p_resist(t=t, v=v) > self.p_tot
+    def v_limit(self, thickness):
+        return max(np.cbrt(self.p_available(self.v_max, thickness) / self.k), 0.0)
 
-    def p_surplus(self, t=0.0, v=None):        
-        if self.p_tot < self.p_resist(t=t, v=v):
-            return float('inf')
-        return self.p_tot - self.p_resist(t=t, v=v)
-
-    def v_limit(self, t=0.0, v=None):
-        return np.cbrt(self.p_available(t=t, v=v) / self.k)
-
-    def time_for_trip(self, t=0.0, d=utils.unit_distance, v=None):
-        if v == None or v <= 0.0 or self.p_insufficient(t=t, v=v):
+    def get_trip_duration(self, velocity, thickness=0.0, distance=utils.unit_distance):
+        if velocity == None or velocity <= 0.0:
             return float('inf')
 
-        if self.p_cons(v=v) <= 0.0:
+        if self.p_available(velocity, thickness) <= 0.:
             return float('inf')
 
-        if self.p_cons(v=v) > self.p_available(t=t, v=v):
-            return d / self.v_limit(t=t, v=v)
-        else:
-            return d / v
-    def fuel_for_trip(self, fuel, t=0.0, d=utils.unit_distance, v=None):
-        if v == None or v < 0.0 or self.p_insufficient(t=t, v=v):
+        return distance / velocity
+
+    def get_trip_consumption(self, fuel, velocity, thickness=0.0, distance=utils.unit_distance):
+        if velocity == None or velocity <= 0.0:
             return float('inf')
 
-        if v == 0.0:
-            return 0.0
-
-        # p_resisted = self.p_resist(t=t, v=v)
-        # if p_resisted > self.p_tot:
-        #     return float('inf')
-        # p_available = self.p_tot - p_resisted
-        # # v_resisted = np.cbrt(p_resisted) / self.k
-
-        # # v = v - v_resisted
-
-        # p_consumed = self.p_cons(v=v)
-        # if p_consumed == 0.0:
-        if self.p_cons(v=v) == 0.0:
-            # If no power was consumed, no fuel was used
-            return 0.0
-        # if p_consumed < 0:
-        elif self.p_cons(v=v) < 0.0:
+        total_power = self.p_consumed(velocity) + self.p_resist(velocity, thickness)
+        if total_power > self.p_tot:
             return float('inf')
-        # if p_consumed > p_available:
-        if self.p_cons(v=v) > self.p_available(t=t, v=v):
-            # Should I correct speed here?
-            v = self.v_limit(t=t, v=v) 
-            p_final = self.p_tot
-        else:
-            # p_final = p_resisted + p_consumed
-            p_final = self.p_resist(t=t, v=v) + self.p_cons(v=v)
 
-        h = ( (d / v) / 60.0 ) / 60.0
-        kilo_watt_hours = p_final * h
+        hours = ( (distance / velocity) / 60.0 ) / 60.0
+        kilo_watt_hours = total_power * hours
         return (1.0 / fuel.lower_heating) * kilo_watt_hours
+
+    def get_costs(self, fuel, velocity, distance, thickness):
+        kg_consumed = self.get_trip_consumption(fuel, velocity, thickness=thickness, distance=distance)
+        if kg_consumed == float('inf'):
+            return float('inf')
+        return fuel.get_price(weight=kg_consumed) + fuel.get_emission_price(weight=kg_consumed)
     def feasible_speed_vector(self, nsteps=10):
         return np.arange(self.v_max / float(nsteps), self.v_max, self.v_max / float(nsteps))
     def zero_initial_speed_vector(self, nsteps=10):
         return np.insert(self.feasible_speed_vector(), 0, 0.0)
     def possible_speed_vector(self, t=0.0, v=0.0):
-        new_v_max = self.v_limit(t=t, v=v)
-        return np.arange(self.v_limit(t=t, v=v))
+        new_v_max = self.v_limit(thickness=t, v=v)
+        return np.arange(self.v_limit(thickness=t, v=v))
 
 ship_list = [
     Vessel("Prizna", 792.0, 84.0, 8.0),

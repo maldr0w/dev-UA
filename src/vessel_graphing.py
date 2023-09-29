@@ -259,48 +259,48 @@ def get_corrected_speed_to_consumption(ship, fuel_type, dist=None, ice_thickness
     return speed_arr, consumption_arr
 
 
-import pareto    
+# import pareto    
 
-ship1paretotable = pareto.Table(vessel.ship_list[0], fuel.fuel_list[0])
-# print(ship1paretotable)
-# print(ship1paretotable.data)
-keysin = []
-outertab = []
-for r in ship1paretotable.rows:
-    dps = []
-    speeds = []
-    times = []
-    distances = []
-    kgf = []
-    pricef = []
-    tone = []
-    pricee = []
-    for d in r.data:
-        speeds.append(d[0])
-        times.append(d[1])
-        distances.append(d[2])
-        kgf.append(d[3])
-        pricef.append(d[4])
-        tone.append(d[5])
-        pricee.append(d[6])
-        dps.append(d[0:])
-        keysin.append(r.key)
-    pr = np.multiply(
-        np.subtract(1, np.divide(pricef, np.max(pricef))),
-        np.subtract(1, np.divide(pricee, np.max(pricee)))
-    )
-    s = np.stack((
-        np.divide(np.flip(distances), np.max(distances)),
-        np.divide(np.flip(speeds), np.max(speeds)),
-        np.subtract(1, pr)
-        # np.divide(pricef, np.max(pricef)),
-        # np.divide(pricee, np.max(pricee))
-        ), axis=1)
-    outertab.append(s)
-fuel_speed_cost = np.array(outertab)
-cost_speed_fuel = fuel_speed_cost.T
-f_to_c = np.reshape(fuel_speed_cost, (fuel_speed_cost.shape[0] * fuel_speed_cost.shape[1], fuel_speed_cost.shape[2]))
-# print(fuel_speed_cost)
+# ship1paretotable = pareto.Table(vessel.ship_list[0], fuel.fuel_list[0])
+# # print(ship1paretotable)
+# # print(ship1paretotable.data)
+# keysin = []
+# outertab = []
+# for r in ship1paretotable.rows:
+#     dps = []
+#     speeds = []
+#     times = []
+#     distances = []
+#     kgf = []
+#     pricef = []
+#     tone = []
+#     pricee = []
+#     for d in r.data:
+#         speeds.append(d[0])
+#         times.append(d[1])
+#         distances.append(d[2])
+#         kgf.append(d[3])
+#         pricef.append(d[4])
+#         tone.append(d[5])
+#         pricee.append(d[6])
+#         dps.append(d[0:])
+#         keysin.append(r.key)
+#     pr = np.multiply(
+#         np.subtract(1, np.divide(pricef, np.max(pricef))),
+#         np.subtract(1, np.divide(pricee, np.max(pricee)))
+#     )
+#     s = np.stack((
+#         np.divide(np.flip(distances), np.max(distances)),
+#         np.divide(np.flip(speeds), np.max(speeds)),
+#         np.subtract(1, pr)
+#         # np.divide(pricef, np.max(pricef)),
+#         # np.divide(pricee, np.max(pricee))
+#         ), axis=1)
+#     outertab.append(s)
+# fuel_speed_cost = np.array(outertab)
+# cost_speed_fuel = fuel_speed_cost.T
+# f_to_c = np.reshape(fuel_speed_cost, (fuel_speed_cost.shape[0] * fuel_speed_cost.shape[1], fuel_speed_cost.shape[2]))
+# # print(fuel_speed_cost)
 # par = pareto.is_efficient(f_to_c)
 # print(par)
 # for idx in par:
@@ -341,101 +341,8 @@ def g_data(ax, values, title, ylabel):
     # ax.legend(loc='upper left')
 
 # def g_data(ship, ax, velocities, data, xlabel, ylabel, t=0.0):
-def g_data_per_fuel(ax, values, title, ylabel):
-    # g_setup(ship, ax, ylabel)
-    # data_points = values
-    # (velocities, ds) in ([v for v, _ in values], [d for _, d in values])
-    g_setup(title, ax, ylabel)
-    # ax.set_title(ship.name, loc='left', fontstyle='oblique')
-    # ax.set_xlabel(xlabel)
-    # ax.set_ylabel(ylabel)
-    # for i, f in enumerate(fuel.fuel_list):
-    #     ax.plot(velocities, data[i], label=f.name)
-    # ax.legend(loc='upper left')
-    # ax.set_title(ship.name, loc='left', fontstyle='oblique')
-    # ax.set_xlabel('Speed travelled [m/s]')
-    # ax.set_ylabel(ylabel)
-    # for i, f in enumerate(fuel.fuel_list):
-    #     ax.plot(velocities, data[i], label=f.name)
-    # ax.legend(loc='upper left')
-    for f, data_points in values:
-        (velocities, ds) = ([v for v, _ in data_points], [d for _, d in data_points])
-        ax.plot(velocities, ds, label=f.name)
-    ax.legend(loc='upper left')
 
-#
-#   Graph of fuel consumption versus vessel speed
-#
-
-def g_cons(ax, values):
-    # ax.set_title(ship.name, loc='left', fontstyle='oblique')
-    # ax.set_xlabel("Speed travelled [m/s]")
-    # ax.set_ylabel("Fuel consumed [kg]")
-    # # velocities = np.insert(ship.feasible_speed_vector(), 0, 0.0)
-    # # for f in fuel.fuel_list:
-    # #     ax.plot(velocities, [ship.fuel_for_trip(f, t=t, v=v) for v in velocities], label=f.name)
-    # for i in np.arange(0, fuel.fuel_list.__len__()):
-    #     ax.plot(velocities, data[i], label=fuel.fuel_list[i].name)
-    # ax.legend(loc='upper left')
-    # g_data_per_fuel(ship, ax, velocities, data, 'Fuel consumed [kg]', t=t)
-    g_data_per_fuel(ax, values, 'Fuel consumed [kg]')
-
-#
-#   Graph of price vs vessel speed
-#
-
-def g_cons_price(ax, values):
-    # ax.set_title(ship.name, loc='left', fontstyle='oblique')
-    # ax.set_xlabel("Speed travelled [m/s]")
-    # ax.set_ylabel("Price of fuel [€]")
-    # # velocities = np.insert(ship.feasible_speed_vector(), 0, 0.0)
-    # # for f in fuel.fuel_list:
-    # #     ax.plot(velocities, [f.get_price(ship.fuel_for_trip(f, t=t, v=v)) for v in velocities], label=f.name)
-    # for f in fuel.fuel_list:
-    #     ax.plot(velocities, [f.get_price(ship.fuel_for_trip(f, t=t, v=v)) for v in velocities], label=f.name)
-    # ax.legend(loc='upper left')
-    g_data_per_fuel(ax, values, 'Price of fuel [€]')
-
-#
-#   Graph of time for trip vs vessel speed
-#
-
-def g_time(ax, values):
-    # ax.set_title(ship.name, loc='left', fontstyle='oblique')
-    # ax.set_xlabel("Speed travelled [m/s]")
-    # ax.set_ylabel("Time [hours]")
-    # velocities = np.insert(ship.feasible_speed_vector(), 0, 0.0)
-    # ax.plot(velocities, [(ship.time_for_trip(t=t, v=v) / 60.0) / 60.0 for v in velocities])
-    g_data(ax, values,'Time [hours]')
-
-  
-#
-#   Graph of emissions vs vessel speed
-#
-
-def g_emis(ax, values):
-    # ax.set_title(ship.name, loc='left', fontstyle='oblique')
-    # ax.set_xlabel("Speed travelled [m/s]")
-    # ax.set_ylabel("Pollutants emitted [tons of CO2]")
-    # velocities = np.insert(ship.feasible_speed_vector(), 0, 0.0)
-    # for f in fuel.fuel_list:
-    #     ax.plot(velocities, [f.equiv_tons_co2(ship.fuel_for_trip(f, t=t, v=v)) for v in velocities], label=f.name)
-    # ax.legend(loc='upper left')
-    g_data_per_fuel(ax, values, 'Pollutants emitted [tons of CO2]')
-#
-#   Graph of emission price vs vessel speed
-#
-
-def g_emis_price(ax, values):
-    # ax.set_title(ship.name, loc='left', fontstyle='oblique')
-    # ax.set_xlabel("Speed travelled [m/s]")
-    # ax.set_ylabel("Cost of pollutants [€]")
-    # velocities = np.insert(ship.feasible_speed_vector(), 0, 0.0)
-    # for f in fuel.fuel_list:
-    #     ax.plot(velocities, [f.get_emission_price(ship.fuel_for_trip(f, t=t, v=v)) for v in velocities], label=f.name)
-    # ax.legend(loc='upper left')
-    g_data_per_fuel(ax, values, 'Cost of pollutants')
-  
+ 
 def create_graph(t=0.0):
     ship_count = vessel.ship_list.__len__()
     # fig, (dur_ax, cons_kg_ax, cons_price_ax, emis_tn_ax, emis_price_ax, total_price_ax) = plt.subplots(ncols = ship_count, nrows=6, sharey='row', sharex='col')
@@ -446,7 +353,7 @@ def create_graph(t=0.0):
         for j, f in enumerate(fuel.fuel_list):
             velocities = s.zero_initial_speed_vector()
 
-            weights = [s.fuel_for_trip(f, t=t, v=v) for v in velocities]
+            weights = [s.get_trip_consumption(f, t=t, v=v) for v in velocities]
             g_setup(s.name, c_kg_ax, 'Fuel [kg]')
             c_kg_ax.plot(velocities, weights, label=f.name) 
             c_kg_ax.legend(loc='upper left')
@@ -478,24 +385,6 @@ def create_graph(t=0.0):
             t_pr_ax.plot(velocities, total_price, label=f.name)
             t_pr_ax.legend(loc='upper left')
             
-    #     ship = vessel.ship_list[i]
-    #     velocities = np.insert(ship.feasible_speed_vector(), 0, 0.0)
-    #     (cons_kg, cons_price, emis_tn, emis_price) = data.data_list(ship, t=t)
-    #     # cons_kg = [(f, []) for f ]
-    # # g_data_per_fuel(ax, values, 'Fuel consumed [kg]')
-    #     # g_data(dur_ax[i], 
-    #     g_data(dur_ax[i], data.trip_duration_list(ship, t=t), ship.name, 'Time [hours]')
-    #     g_data_per_fuel(cons_kg_ax[i], cons_kg, ship.name, 'Fuel consumed [kg]')
-    #     # g_cons(ship, cons_ax[i], t=t)
-    #     # g_time(ship, time_ax[i], t=t)
-    #     g_data_per_fuel(cons_price_ax[i], cons_price, ship.name, 'Cost [€ / kg fuel]')
-    #     # g_cons_price(ship, price_ax[i], t=t)
-    #     g_data_per_fuel(emis_tn_ax[i], emis_tn, ship.name, 'Emission [tons CO2]')
-    #     g_data_per_fuel(emis_price_ax[i], emis_price, ship.name, 'Cost [€ / tons CO2]')
-    #     # g_emis_price(ship, emission_price_ax[i], t=t)
-    #     # g_emis(ship, emission_ax[i], t=t)
-    #     # g_data_per_fuel(total_price_ax[i], np.sum(np.array((cons_price, emis_price))), ship.name, 'Total cost [€]')
-
     fig.set_size_inches(18, 20)
     fig.suptitle('Fuel consumption in kilogrammes, for a 25km voyage')
     plt.savefig('images/cons_at_t' + str(t) + '.png')

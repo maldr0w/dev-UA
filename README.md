@@ -102,6 +102,25 @@ When applying the data one must consider data projection:
 
 ---
 
+# How to Run
+
+To run the program, simply change to the 'src' directory, and enter
+```
+python3 main.py --opt=arg[..]
+```
+
+For example, if you have coordinates (60.000, 68.000) and (66.898, -162.596), enter
+```
+python3 main.py --start=60.000,68.000 --end=66.898,-162.596
+```
+
+For more help and information, enter
+```
+python3 main.py -h
+```
+
+---
+
 # New developments
 
 ## utils.py

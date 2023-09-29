@@ -22,7 +22,7 @@ def data_list(s, t=0.0):
 
 def trip_duration_list(s, t=0.0):
 	# (ship * ( fuel * ( velocity * hours ) ) ) list
-	return [(v, s.time_for_trip(t=t, v=v)) for v in s.zero_initial_speed_vector()]
+	return [(v, s.get_trip_duration(t=t, v=v)) for v in s.zero_initial_speed_vector()]
 
 # def emission_data_list(t=0.0):
 # 	# ship * ( fuel * ( velocity * tons * € ) ) list

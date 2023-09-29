@@ -17,6 +17,16 @@ class GHG:
             self.factor = 0.0
     def __str__(self):
         return f"{self.name.upper()}\t{self.factor} g/kg"
+    def gwp(self):
+        match self.name:
+            case 'co2':
+                return self.factor * 1.0
+            case 'ch4':
+                return self.factor * 25.0
+            case 'n2o':
+                return self.factor * 298.0
+            case _:
+                return 0.0
     
 class Fuel:
     def __init__(self, name, price_per_kg, lower_heating, co2=None, ch4=None, n2o=None):
@@ -26,6 +36,12 @@ class Fuel:
             GHG('ch4', ch4),
             GHG('n2o', n2o)
         ]
+        self.unit_gwp = np.sum([type.gwp() for type in [
+            GHG('co2', co2),
+            GHG('ch4', ch4),
+            GHG('n2o', n2o)
+        ]])
+        print('unit gwp ' + str(self.unit_gwp) + ' ' + name)
         self.lower_heating = lower_heating
         self.price = price_per_kg
 
@@ -39,13 +55,14 @@ class Fuel:
         return weight * self.price
     def get_emissions(self,weight=1.0):
         return [weight * type.factor for type in self.emission_factors]
-    def get_gwp(self,weight=1.0):
-        if self.emission_factors.__len__() > 0:
-            return [weight * type.factor * get_gwp(type.name) for type in self.emission_factors]
-        else:
-            return [0.0]
+    def gwps(self,weight=1.0):
+        return [weight * type.factor * type.gwp() for type in self.emission_factors]
+        # if self.emission_factors.__len__() > 0:
+        #     return [weight * type.factor * get_gwp(type.name) for type in self.emission_factors]
+        # else:
+        #     return [0.0]
     def equiv_tons_co2(self, weight=1.0):
-        return (np.sum(self.get_gwp(weight=weight))/ 1_000_000.0)
+        return (weight * self.unit_gwp) / 1_000_000.0
     def get_emission_price(self, weight=1.0):
         return 20.0 * self.equiv_tons_co2(weight=weight)
         # return 20.0 * (np.sum(self.get_gwp(weight=weight)) / 1_000_000.0)
@@ -55,9 +72,11 @@ fuel_list = [
     Fuel('natural gas', 0.98, 12.9, 
         co2=2750., ch4=51.2, n2o=0.11),
     Fuel('methanol', 0.325, 5.55, 
-        co2=1380),
+        co2=1380., ch4=0., n2o=0.),
     Fuel('dme', 0.7, 8., 
-        co2=1927.),
-    Fuel('hydrogen', 7.0, 33.3),
-    Fuel('b20', 1.58, 11.83),
+        co2=1927., ch4=0., n2o=0.),
+    Fuel('hydrogen', 7.0, 33.3,
+        co2=0., ch4=0., n2o=0.),
+    Fuel('b20', 1.58, 11.83,
+        co2=0., ch4=0., n2o=0.),
 ]
