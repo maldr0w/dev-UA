@@ -6,15 +6,15 @@ import utils
 
 
 utils.print_entrypoint(__name__, __file__)
-import vessel_graphing as vess_data
-import vessel
-import fuel
-import distance_correction as dist_corr
+import graph_creation
+import ship_class
+import fuel_class
+import data_extraction
 
-coordinate_data = dist_corr.dataset['sea_ice_thickness'].coords
+coordinate_data = data_extraction.dataset['sea_ice_thickness'].coords
 latitude_data, longitude_data = coordinate_data['lat'].to_numpy(), coordinate_data['lon'].to_numpy()
-mean_ice_thickness = np.nanmean(dist_corr.mapdata) # (1 * np.nanstd(only_values_ice_thickness))
-HEURISTIC_FUEL = fuel.fuel_list[2]
+mean_ice_thickness = np.nanmean(data_extraction.mapdata) # (1 * np.nanstd(only_values_ice_thickness))
+HEURISTIC_FUEL = fuel_class.fuel_list[2]
 HEURISTIC_THICKNESS = 0.0
 
 def find_closest_index(coordinate):
@@ -82,7 +82,7 @@ def cost(node, neighbor, ship, trip_fuel, unit_rate):
     lon2 = longitude_data[y2, x2]
 
     # estimated_distance = great_circle(lat1, lon1, lat2, lon2)
-    estimated_thickness = 0.5 * (dist_corr.mapdata[y1, x1] + dist_corr.mapdata[y2, x2])
+    estimated_thickness = 0.5 * (data_extraction.mapdata[y1, x1] + data_extraction.mapdata[y2, x2])
     estimated_distance = utils.unit_distance * np.sqrt((abs(x1 - x2) ** 2) + (abs(y1 - y2) ** 2)) 
 
     return ship.get_costs(trip_fuel, ship.v_limit(estimated_thickness), estimated_distance, estimated_thickness)
@@ -112,7 +112,7 @@ def heuristic(node, goal, ship, fuel_type, unit_rate):
     # lon1 = longitude_data[y1, x1]
     # lon2 = longitude_data[y2, x2]
     
-
+    estimated_units_covered = max(abs(x1 - x2), abs(y1 - y2))
     # estimated_distance = great_circle(lat1, lon1, lat2, lon2)
     estimated_distance = utils.unit_distance * max(abs(x1 - x2), abs(y1 - y2))
     # estimated_distance = np.sqrt((abs(x1 - x2) ** 2) + (abs(y1 - y2) ** 2))
@@ -123,6 +123,7 @@ def heuristic(node, goal, ship, fuel_type, unit_rate):
     # return heuristic_unit_rate * (estimated_distance / 25000.0)
     # return estimated_distance * (1.0 / (np.e ** mean_ice_thickness)) 
     # return estimated_distance
+    return ship_class.HEURISTIC_BASAL_RATE * estimated_units_covered
     return ship.get_costs(fuel_type, ship.v_limit(0.0), estimated_distance, 0.0)
     # return 25000.0 * estimated_distance
 
@@ -166,8 +167,8 @@ def A_star_search_algorithm(start_coordinate, end_coordinate, trip_fuel, ship):
     g_score = {}  # cost from start node to each node
     f_score = {}
     # Init empty map with infinity g_score
-    y_bound = y_res * np.shape(dist_corr.mapdata)[0]
-    x_bound = y_res * np.shape(dist_corr.mapdata)[1]
+    y_bound = y_res * np.shape(data_extraction.mapdata)[0]
+    x_bound = y_res * np.shape(data_extraction.mapdata)[1]
     for y in np.arange(0, y_bound):
         for x in np.arange(0, x_bound):
             g_score[x, y] = float('inf')
@@ -211,7 +212,7 @@ def A_star_search_algorithm(start_coordinate, end_coordinate, trip_fuel, ship):
             if 0 <= neighbor[0] < x_bound and 0 <= neighbor[1] < y_bound:
                 # Proper control flow requires this statement to fail,
                 # but the previous to pass
-                if np.isnan(dist_corr.mapdata[neighbor[1], neighbor[0]]):
+                if np.isnan(data_extraction.mapdata[neighbor[1], neighbor[0]]):
                     # Indeterminate data, proceed to next iteration
                     continue
                 # if neighbor is in closed set, due to our heuristic,
@@ -249,9 +250,9 @@ def A_star_search_algorithm(start_coordinate, end_coordinate, trip_fuel, ship):
     return reconstruct_path(current_node, came_from), current_f_score
 
 def plot_path(path):
-    map = dist_corr.init_map()
+    map = data_extraction.init_map()
     print('Plotting path...')
-    [dist_corr.plot_coord(lon, lat, map=map)
+    [data_extraction.plot_coord(lon, lat, map=map)
         for lon, lat in
         [(longitude_data[y_p, x_p], latitude_data[y_p, x_p]) for x_p, y_p in path]
     ]
@@ -259,9 +260,7 @@ def plot_path(path):
 
 
 def run_search(start, end):
-    import fuel
-    import vessel
-    path, score = A_star_search_algorithm(start, end, fuel.fuel_list[0], ship=vessel.ship_list[0])
+    path, score = A_star_search_algorithm(start, end, fuel_class.fuel_list[0], ship=ship_class.ship_list[0])
     if path != None:
         import distance_correction
         plot_path(path)
@@ -291,16 +290,19 @@ coordinates = [
     [TASIILAP, MURMANSK]
 ]
 
-def plot_between(start_place, end_place, fuel_type, ship):
-    path, score = A_star_search_algorithm(start_place[1], end_place[1], fuel_type, ship=ship)
+def plot_between(start_place, end_place, fuel, ship):
+    path, score = A_star_search_algorithm(start_place[1], end_place[1], fuel, ship)
     plot_path(path)
-    dist_corr.save_coord_map(start_place[0] + ' to ' + end_place[0] + '(' + str(score) + ', ' + fuel_type.name + ')')
+    data_extraction.save_coord_map(start_place[0] + ' to ' + end_place[0] + '(' + str(score) + ', ' + fuel.name + ')')
 def test():
+    for fuel in fuel_class.fuel_list:
+        plot_between(MURMANSK, KOTZEBUE, fuel, ship_class.ship_list[0])
+def profile():
     import cProfile, pstats
     profiler = cProfile.Profile()
     print("Starting profiling...")
     profiler.enable()
-    plot_between(MURMANSK, KOTZEBUE, fuel.fuel_list[0], vessel.ship_list[0])
+    plot_between(MURMANSK, KOTZEBUE, fuel_class.fuel_list[0], ship_class.ship_list[0])
     profiler.disable()
     print("Dumping stats...")
     stats = pstats.Stats(profiler).sort_stats('ncalls')

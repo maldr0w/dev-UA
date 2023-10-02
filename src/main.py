@@ -1,23 +1,31 @@
 
 def print_help():
     print ('FLAGS')
-    print ('\t --help  - Display help info')
+    print ('\t --help     - Display help info')
     print ('\t -h ')
-    print ('\t --test  - Perform profiled test run')
+    print ('\t --graph    - Generate graphs at the specified ice thickness')
+    print ('\t -t           Ex: --graph=<thickness> (. as decimal point)')
+    print ('\t --test     - Perform test run')
     print ('\t -t')
-    print ('\t --start - Input start coordinate')
-    print ('\t -s        Ex: --start=<lat>,<lon> (no spaces, . as decimal point)')
-    print ('\t --end   - Input end coordinate')
-    print ('\t -e        Ex: --end=<lat>,<lon> (no spaces, . as decimal point)')
+    print ('\t --profile  - Perform profiled run')
+    print ('\t -p')
+    print ('\t --start    - Input start coordinate')
+    print ('\t -s           Ex: --start=<lat>,<lon> (no spaces, . as decimal point)')
+    print ('\t --end      - Input end coordinate')
+    print ('\t -e           Ex: --end=<lat>,<lon> (no spaces, . as decimal point)')
 
 import sys, getopt
 def main(argv):
     start, end = None, None
-    opts, args = getopt.getopt(argv, "hts:e:", ["help","test","start=","end="])
+    opts, args = getopt.getopt(argv, "hg:tps:e:", ["help","graph=", "test", "profile","start=","end="])
     for opt, arg in opts:
         if opt in ('-h', '--help'):
             print_help()
             sys.exit()
+        elif opt in ('-g', '--graph'):
+            thickness = float(arg)  
+            import graph_creation
+            graph_creation.create_graphs(thickness)
         elif opt in ('-s', '--start'):
             coords = arg.split(',')
             start = (float(coords[0]), float(coords[1]))
@@ -28,11 +36,15 @@ def main(argv):
             import a_star
             a_star.test()
             sys.exit()
+        elif opt in ('-p', '--profile'):
+            import a_star
+            a_star.profile()
+            sys.exit()
     if start != None and end != None:
         import a_star
         a_star.run_search (start, end)
     else:
-        print ('Error with coordinates')
+        print ('ERROR: Input error\n')
         print_help()
     print ('Exiting...')
     sys.exit()

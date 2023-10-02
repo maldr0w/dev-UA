@@ -1,7 +1,7 @@
 import utils
 import numpy as np
 utils.print_entrypoint(__name__, __file__)
-class Vessel:
+class Ship:
     def __init__(self, name, main_eng_pow=0.0, aux_eng_pow=0.0, design_speed=0.0):
         self.name = name
         self.main_eng_pow = main_eng_pow
@@ -63,17 +63,25 @@ class Vessel:
         if kg_consumed == float('inf'):
             return float('inf')
         return fuel.get_price(weight=kg_consumed) + fuel.get_emission_price(weight=kg_consumed)
-    def feasible_speed_vector(self, nsteps=10):
-        return np.arange(self.v_max / float(nsteps), self.v_max, self.v_max / float(nsteps))
-    def zero_initial_speed_vector(self, nsteps=10):
+    def feasible_speed_vector(self, thickness=0.0, nsteps=10):
+        return np.arange(self.v_limit(thickness) / nsteps, self.v_limit(thickness), self.v_limit(thickness) / nsteps)
+
+    def zero_initial_speed_vector(self, thickness=0.0, nsteps=10):
         return np.insert(self.feasible_speed_vector(), 0, 0.0)
+
     def possible_speed_vector(self, t=0.0, v=0.0):
-        new_v_max = self.v_limit(thickness=t, v=v)
-        return np.arange(self.v_limit(thickness=t, v=v))
+        # new_v_max = self.v_limit(thickness=t)
+        return np.arange(self.v_limit(thickness=t))
+
+    def zero_initial_possible_speed_vector(self, thickness, velocity):
+        return np.insert(self.possible_speed_vector(thickness, velocity), 0, 0.0)
 
 ship_list = [
-    Vessel("Prizna", 792.0, 84.0, 8.0),
-    Vessel("Kornati", 1764.0, 840.0, 12.3),
-    Vessel("Petar Hektorovic", 3600.0, 1944.0, 15.75)
+    Ship("Prizna", 792.0, 84.0, 8.0),
+    Ship("Kornati", 1764.0, 840.0, 12.3),
+    Ship("Petar Hektorovic", 3600.0, 1944.0, 15.75)
 ]
+# import HEURISTIC_FUEL_TYPE from fuel_class
+from fuel_class import HEURISTIC_FUEL_TYPE
+HEURISTIC_BASAL_RATE = ship_list[0].get_trip_consumption(HEURISTIC_FUEL_TYPE, ship_list[0].v_limit(0.0))
 utils.print_exit(__name__, __file__)

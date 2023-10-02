@@ -80,3 +80,4 @@ fuel_list = [
     Fuel('b20', 1.58, 11.83,
         co2=0., ch4=0., n2o=0.),
 ]
+HEURISTIC_FUEL_TYPE = fuel_list[2]
