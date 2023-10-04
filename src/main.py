@@ -17,6 +17,7 @@ def print_help():
 import sys, getopt
 def main(argv):
     start, end = None, None
+    thickness = None
     opts, args = getopt.getopt(argv, "hg:tps:e:", ["help","graph=", "test", "profile","start=","end="])
     for opt, arg in opts:
         if opt in ('-h', '--help'):
@@ -24,8 +25,6 @@ def main(argv):
             sys.exit()
         elif opt in ('-g', '--graph'):
             thickness = float(arg)  
-            import graph_creation
-            graph_creation.create_graphs(thickness)
         elif opt in ('-s', '--start'):
             coords = arg.split(',')
             start = (float(coords[0]), float(coords[1]))
@@ -42,7 +41,10 @@ def main(argv):
             sys.exit()
     if start != None and end != None:
         import a_star
-        a_star.run_search (start, end)
+        a_star.run_search (start, end)        
+    elif thickness != None:
+        import graph_creation
+        graph_creation.create_graphs(thickness)
     else:
         print ('ERROR: Input error\n')
         print_help()

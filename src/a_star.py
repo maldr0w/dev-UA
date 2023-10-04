@@ -262,9 +262,8 @@ def plot_path(path):
 def run_search(start, end):
     path, score = A_star_search_algorithm(start, end, fuel_class.fuel_list[0], ship=ship_class.ship_list[0])
     if path != None:
-        import distance_correction
         plot_path(path)
-        distance_correction.save_coord_map(str(start) + '_' + str(end) + '_' + str(score) + '€')
+        data_extraction.save_coord_map(str(start) + '_' + str(end) + '_' + str(score) + '€')
         print ('New path available in images directory!')
 
 
