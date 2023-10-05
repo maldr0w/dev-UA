@@ -345,16 +345,24 @@ def g_data(ax, values, title, ylabel):
 def all_consumption_statistics_single_graphs(ship, thickness):
     shipdata = {}
 
-    velocities = ship.zero_initial_speed_vector(thickness=thickness) 
+    # velocities = ship.zero_initial_speed_vector(thickness=thickness) 
+    # velocities = []
+    # for percentage in np.arange(0.0, 1.0, 0.01):
+    #     ship.set_target_velocity(percentage)
+    #     print(str(percentage) + ' ' + str(ship.get_velocity(thickness)))
+    #     velocities.append(ship.get_velocity(thickness))
 
+    velocities = ship.get_velocity_range(thickness)
     shipdata['velocities'] = velocities
+    # print(velocities)
     
     # X: Speed m/s <=> Y: Fuel consumption kg
     print(' 0% - Fuel consumption...')
     fig, ax = plt.subplots()
     consumptions = {}
     for fuel in fuel_class.fuel_list:
-        consumptions[fuel.name] = [ship.get_trip_consumption(fuel, velocity, thickness) for velocity in velocities]
+        ship.set_fuel(fuel)
+        consumptions[fuel.name] = ship.get_consumption_range(thickness, 100.0)
         g_setup(ship.name, ax, 'Fuel [kg]')
         ax.plot(velocities, consumptions[fuel.name], label=fuel.name)
     ax.legend(loc='upper left')
