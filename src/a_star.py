@@ -2,6 +2,7 @@ import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
 import utils
+from typing import List, Type
 
 
 
@@ -35,54 +36,46 @@ def find_closest_coordinate(coordinate):
 # Initializing A* search algorithm
 
 
-# mean_ice_thickness = np.mean(dist_corr.mapdata,where=np.invert(np.isnan(dist_corr.mapdata)))
 from scipy import stats
-# mean_ice_thickness = np.std(np.extract(np.invert(np.logical_or(np.isnan(dist_corr.mapdata),np.equal(dist_corr.mapdata, 0.))), dist_corr.mapdata))
-ICE_THRESHOLD = 0.6
+
 # only_values_ice_thickness = np.extract(np.invert(np.logical_or(np.isnan(dist_corr.mapdata), np.less(dist_corr.mapdata, ICE_THRESHOLD))), dist_corr.mapdata)
 
-def great_circle(lat1, lon1, lat2, lon2):
-    # a = np.deg2rad(lat1)
-    # b = np.deg2rad(lat2)
-    # x = np.deg2rad(lon1)
-    # y = np.deg2rad(lon2)
-    radius = 6_371_000
+MEAN_EARTH_RADIUS_METERS = 6_371_000.0
+def great_circle(
+        lat1: float, lon1: float, 
+        lat2: float, lon2: float
+        ) -> float:
+    ''' Calculates distance between coordinates
+    :param lat1: float - Latitude of initial point
+    :param lon1: float - Longitude of initial point
+    :param lat2: float - Latitude of final point
+    :param lon2: float - Longitude of final point
+    :return: float - Distance between the points
+
+    Uses the haversine formula to return distance between coordinate points
+    '''
+
     phi1, phi2 = np.deg2rad(lat1), np.deg2rad(lat2)
     phid = np.deg2rad(lat2 - lat1)
     lamd = np.deg2rad(lon2 - lon1)
-    # phi1, phi2 = np.deg2rad(lat1), np.deg2rad(lat2)
 
-    # the1, phi1 = np.deg2rad(lat1), np.deg2rad(lon1)
-    # the2, phi2 = np.deg2rad(lat2), np.deg2rad(lon2)
     a = (np.sin(phid / 2) * np.sin(phid / 2)) + np.cos(phi1) * np.cos(phi2) * (np.sin(lamd / 2) * np.sin(lamd / 2))
     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
 
-    return radius * c
+    return c * MEAN_EARTH_RADIUS_METERS
     
-    # a = np.sin((the2 - the1) / 2.0) ** 2.0
-    # b = np.cos(the1) * np.cos(the2) * (np.sin((phi2 - phi1) / 2.0) ** 2.0) 
-    # return (2 * radius) * np.arcsin(np.sqrt(a + b))
-    # c = abs(x - y)
-    # return 112320 * np.rad2deg(
-    #     np.arccos(
-    #         (np.cos(a) * np.cos(b) * np.cos(c))
-    #         + (np.sin(a) * np.sin(b))
-    #     )
-    # )
-# from enum import Enum
-# class Optimization(Enum):
-#     DISTANCE = 1
-#     CONSUMPTION = 2
-
-def cost(node, neighbor, ship, trip_fuel):
-    '''
-    cost function [g(n)]
+ICE_THICKNESS_LIMIT = 2.1
+def cost(node: List[int], neighbor: List[int], ship: Type[ship_class.Ship], trip_fuel):
+    ''' Cost function [g(n)]
+    :param node: List[int] - The indices of the node
+    :param neighbor: List[int] - The indicies of the neighbor
+    :param ship: Type[ship_class.Ship] - The ship in question
+    :return: float - The estimated cost between node and neighbor
 
     Using the same calculation as the heuristic, 
     this function returns the actual cost, using the average of the
     node thickness and the neighbor thickness, as well as a specified fuel
     '''
-    # print('COST')
     x1, y1 = node
     x2, y2 = neighbor
 
@@ -94,57 +87,85 @@ def cost(node, neighbor, ship, trip_fuel):
 
     estimated_distance = great_circle(lat1, lon1, lat2, lon2)
     estimated_thickness = 0.5 * (data.ice_values[y1, x1] + data.ice_values[y2, x2])
-    # estimated_distance = utils.unit_distance * np.sqrt((abs(x1 - x2) ** 2) + (abs(y1 - y2) ** 2)) 
-    estimated_cost = ship.get_cost(estimated_thickness, estimated_distance)
-    # estimated_cost = ship.get_costs(trip_fuel, ship.v_limit(estimated_thickness), estimated_distance, estimated_thickness)
 
-    # print('est cost')
-    # print(estimated_cost)
+    if estimated_thickness <= ICE_THICKNESS_LIMIT:
+        estimated_cost = ship.get_cost(estimated_thickness, estimated_distance)
+    else:
+        estimated_cost = float('inf')
 
     return estimated_cost
-    # return (1 + estimated_thickness) * estimated_distance
-    # return estimated_distance
-    
-# Methanol as comparison, gives the cheapest overall cost
-def get_heuristic_unit_rate(ship, fuel_type, heuristic_thickness=0.0):
-    # return ship.get_trip_consumption(fuel_type, ship.v_limit(HEURISTIC_THICKNESS), thickness=HEURISTIC_THICKNESS)
-    return ship.get_costs(fuel_type, ship.v_limit(heuristic_thickness) / 2, utils.unit_distance, heuristic_thickness)
+  
+MANHATTAN_DISTANCE_MAX = 2 * 432 
 
+WEIGHT_BASE = 1.0001
+EPSILON = 0.025
 def heuristic(node, goal, ship, fuel):
     '''
     heuristic estimate (Diagonal distance) [h(n)]
     Estimate of cost to reach goal node from specified node.
-    Cost is calculated as follows:
 
-        A constant, called HEURISTIC_BASAL_RATE is calculated.
-        This represents an estimate of how much fuel is used to cover
-        the unit distance of 25km.
-        Then, using the diagonal distance (which gives the longest
-        distance based on the x and y components of the prospective diagonal
-        path), we multiply it by the basal rate to get an estimated cost.
+    ==GOAL==
+    The goal of the heuristic is to provide an overestimate at every point,
+    thus the fuel used to calculate the basal rate is Hydrogen, the most expensive
+    fuel found through the graphs created elsewhere in the program.
 
-        The goal of the heuristic is to provide a very optimistic underestimate,
-        thus the fuel used to calculate the basal rate is methanol, the cheapest
-        fuel found through the graphs created elsewhere in the program.
+    ==WEIGHTING==
+    The weighting here is very important. Under development, it was often
+    found that a too 'realistic' estimate, would result in infinite search
+    loops, as all neighboring path segments would seem equally ideal,
+    especially in case of paths along open water (no ice). Additionally,
+    due to the number of times it would be run, any added complexity would
+    greatly impact the runtime of the search.
 
-        The weighting here is very important. Under development, it was often
-        found that a too 'realistic' estimate, would result in infinite search
-        loops, as all neighboring path segments would seem equally ideal,
-        especially in case of paths along open water (no ice). Additionally,
-        due to the number of times it would be run, any added complexity would
-        greatly impact the runtime of the search.
+        The idea is to use a weighted approach.
+        In order to ensure the estimate is always a bit high, we define a term
+        called the weighting exponent.
 
-        Additionally, it was found that if the 'heuristic fuel' (meaning the fuel
-        used to calculate this basal rate) was changed to represent the fuel
-        that was actually used during the journey, the constructed paths would
-        all be identical. Thus, the idea to keep this constant arose, as otherwise
-        the algorithm would simply find the shortest path, and the price of the path
-        would be a dimensionless quantity, as it no longer represented something IN TERMS
-        of alternatives, but rather in terms of absolutes.
+        WEIGHT_BASE : the constant part of the weighting exponent
+        EPSILON : weight of error percentage increment,
+        delta x : absolute difference of given x indices
+        delta y : absolute difference of given y indices
+        percent error of x : delta x divided by x index full span,
+        percent error of y : delta y divided by y index full span,
+        sigma x : EPSILON times percent error of x,
+        sigma y : EPSILON times percent error of y,
+        weighting exponent : WEIGHT_BASE + sigma x + sigma y,
+        distance estimate : great circle distance of given coordinates,
+        weighted distance : distance estimate, raised to the power of the weighting exponent
+
+        The final cost estimate is then calculated as the unit cost of the ship,
+        which is set at the beginning of the journey (set to the fuel to compare to
+        which by default is Hydrogen, due to its high price), times this weighted
+        distance.
+
+    The result is that the algorithm will greatly overestimate when far from the point.
+    This is very useful in certain cases, such as in the route "Mongstad to Mizushima"
+    in the test paths. For this route, the algorithm can tend to prefer path length
+    a bit too much, due to the fact that a regular distance estimate would fail to
+    take into account that the goal is on the other side of a landmass.
+    In order to minimize runtime inefficiency, a "dumb" way of predicting this was needed.
+
+    The weighting exponent is the key to this "dumb" way.
     '''
     # print('HEURISTIC')
     x1, y1 = node
     x2, y2 = goal
+
+    delta_x = abs(x2 - x1)
+    delta_y = abs(y2 - y1)
+
+    percent_x = delta_x / 432
+    sigma_x = EPSILON * percent_x
+
+    percent_y = delta_y / 432
+    sigma_y = EPSILON * percent_y
+
+    weight_sigma = sigma_x + sigma_y
+
+    manhattan_distance = delta_x + delta_y
+    manhattan_distance_ratio = manhattan_distance / MANHATTAN_DISTANCE_MAX
+    euclidean_distance = np.sqrt((delta_x ** 2) + (delta_y)** 2)
+    diagonal_distance = max(delta_x, delta_y)
 
     lat1 = latitude_data[y1, x1]
     lat2 = latitude_data[y2, x2]
@@ -152,21 +173,26 @@ def heuristic(node, goal, ship, fuel):
     lon1 = longitude_data[y1, x1]
     lon2 = longitude_data[y2, x2]
 
+    great_circle_distance = great_circle(lat1, lon1, lat2, lon2)
+
     # diagonal_distance = max(abs(x2 - x1), abs(y2 - y1))
+
+    diagonal_distance_ratio = diagonal_distance / 432
 
     # diagonal_ratio = diagonal_distance / 432
 
     # weighting_exponent = 1.0 + (0.21 * diagonal_ratio)
 
-    x_distance = abs(x2 - x1)
-    y_distance = abs(y2 - y1)
-    distance_ratio = (x_distance + y_distance) / (2 * 432)
+    # x_distance = abs(x2 - x1)
+    # y_distance = abs(y2 - y1)
+    # distance_ratio = (x_distance + y_distance) / (2 * 432)
 
-    weighting_exponent = 1.0 + (0.1 * distance_ratio)
+    # weighting_exponent = 1.0 + (0.005 * manhattan_distance_ratio)
+    weighting_exponent = WEIGHT_BASE + weight_sigma
   
     # estimated_units = great_circle(lat1, lon1, lat2, lon2)
     # estimated_units = max(x_distance, y_distance)
-    estimated_units = x_distance + y_distance
+    # estimated_units = x_distance + y_distance
     # estimated_units = np.sqrt((x_distance ** 2) + (y_distance ** 2))
     # p1_past_passage = (lon1 >= 100.0 or lon1 <= -100.0) and lat1 >= 60.0
     # p2_past_passage = (lon2 >= 100.0 or lon2 <= -100.0) and lat2 >= 60.0
@@ -184,6 +210,7 @@ def heuristic(node, goal, ship, fuel):
     # estimated_units = abs(x1 - x2) + abs(y1 - y2)
     # else:
     estimated_distance = great_circle(lat1, lon1, lat2, lon2)
+    # estimated_distance = euclidean_distance * utils.unit_distance
     weighted_distance = np.power(estimated_distance, weighting_exponent)
     # estimated_distance = utils.unit_distance * estimated_units
     # estimated_distance = (utils.unit_distance / 25.0) * estimated_units
@@ -242,15 +269,14 @@ def A_star_search_algorithm(start_coordinate, end_coordinate, fuel, ship):
         '''
     print('\tStarting A*... (this may in some cases take a while)')
 
-    fuel.set_heuristic_correction(HEURISTIC_FUEL, ship)
-    fuel.set_heuristic_cost(HEURISTIC_FUEL, ship)
-    fuel.set_unit_price(ship)
+    # There may be better values to choose here
+    ship.set_target_velocity(0.88)
 
-    ship.set_target_velocity(1.00)
-
+    # Initialize unit cost as the most expensive overall, Hydrogen
     ship.set_fuel(fuel_class.Hydrogen())
     ship.set_unit_cost()
 
+    # Set to actual fuel in use
     ship.set_fuel(fuel)
     # ship.set_target_velocity(1.00)
     # ship.set_unit_cost()
@@ -375,8 +401,8 @@ def run_search(start_coordinate, end_coordinate):
     Runs A* on the provided coordinates, and attempts to plot the path.
     In case of a failed search, only the start-point and end-point will be
     visible in the plot (for debugging purposes etc.)
-        Inputs: start_coordinate (lon lat)
-                end_coordinate (lon lat)
+    :param start_coordinate: List[float] - Start coordinate as [lon, lat]
+    :param end_coordinate: List[float] - End coordinate as [lon, lat]
     '''
 
     path, score, search_successful = A_star_search_algorithm(start_coordinate, end_coordinate, fuel_class.fuel_list[0], ship=ship_class.ship_list[0])
@@ -430,7 +456,7 @@ coordinates = [
 
 def plot_between(start_place, end_place, fuel, ship):
     path, score, search_successful = A_star_search_algorithm(start_place[1], end_place[1], fuel, ship)
-    plot_path(path)
+    plot_path(path, data.init_map())
     data.save_coord_map(start_place[0] + ' to ' + end_place[0] + '(' + str(score) + ', ' + fuel.name + ')')
 def test():
     for fuel in fuel_class.fuel_list:

@@ -7,9 +7,9 @@ def data_list(s, t=0.0):
     # ( fuel * ( velocity * kg ) ) list
     weights = [(f, [(v, s.fuel_for_trip(f, t=t, v=v), ) for v in velocities]) for f in fuel_class.fuel_list]
     # ( fuel * ( velocity * [€ / kg] ) list
-    fuel_price = [(f, [(v, f.get_price(per_v_data)) for v, per_v_data in per_f_data]) for f, per_f_data in weights]
+    fuel_price = [(f, [(v, f.get_consumption_price(per_v_data)) for v, per_v_data in per_f_data]) for f, per_f_data in weights]
     # ( fuel * ( velocity * tons ) ) ) list
-    emission_data = [(f, [(v, f.equiv_tons_co2(per_v_data)) for v, per_v_data in per_f_data]) for f, per_f_data in weights]
+    emission_data = [(f, [(v, f.get_emission_tonnage(per_v_data)) for v, per_v_data in per_f_data]) for f, per_f_data in weights]
     # ( fuel * ( velocity * [€ / ton] ) ) list
     emission_price = [(f, [(v, f.get_emission_price(per_v_data)) for v, per_v_data in per_f_data]) for f, per_f_data in weights]
     return (weights, fuel_price, emission_data, emission_price)
@@ -33,8 +33,6 @@ DATA_FILE = 'ice_thickness_2022.nc'
 dataset = xr.open_dataset(DATA_FILE)
 meters = (np.shape(dataset['sea_ice_thickness'].coords['xc'])[0] - 1) * utils.unit_distance
 
-# print(np.shape(dataset['sea_ice_thickness'].coords['xc'])[0] * 25)
- 
 def reinit_map():
     '''
     Reinitialize map for plot points.
@@ -47,8 +45,7 @@ def reinit_map():
     m.drawmapboundary(fill_color='gray')
     return m
 
-
-def plot_coord(lon, lat, lon_west=False, c='r', m=',', map=None):
+def plot_coord(lon: float, lat: float, lon_west=False, c='r', m=',', map=None):
     '''
     Function to plot a coordinate on the map given.
     '''
@@ -63,9 +60,10 @@ icedata = dataset['sea_ice_thickness'].values[TIME]
 
 # Shift coordinates based on the finding in terms of scale
 # This makes the top-left 0 m, 0 m
-# print("Shifting coordinates...")
-def shift(c):
-    return (1000 * c) + (meters / 2)
+def shift(coordinate_component: float) -> float:
+    scaled_component = 1000.0 * coordinate_component
+    shifted_component = scaled_component + (meters / 2)
+    return shifted_component
 
 vshift = np.vectorize(shift)
 x_coords = vshift(dataset['sea_ice_thickness'].coords['xc'])
@@ -89,7 +87,15 @@ for y, row in enumerate(dataset['status_flag'][TIME].values):
 
 for y, row in enumerate(ice_values):
     for x, datapoint in enumerate(row):
-        ice_values[y, x] = datapoint + 0.5
+        if datapoint < 0.0:
+            ice_values[y, x] = 0.0
+        elif datapoint > 11.0:
+            ice_values[y, x] = 11.0
+
+ICE_THICKNESS_MAX = np.nanmax(ice_values)
+ICE_THICKNESS_MEAN = np.nanmean(ice_values)
+# Color normalization scheme, behaves linearly until around the ice limit of the ships
+COLORMAP_NORM = mpl.colors.SymLogNorm(linthresh=2.4, vmin=0.0, vmax=ICE_THICKNESS_MAX)
 
 # Make a mesh corresponding to the entire map for creating a figure
 xx, yy = np.meshgrid(x_coords, y_coords)
@@ -97,7 +103,12 @@ xx, yy = np.meshgrid(x_coords, y_coords)
 def reinit_colormesh(map):
     cmap = mpl.cm.jet
     cmap.set_bad('black',1.)
-    map.pcolormesh(xx, yy, ice_values, norm='symlog', shading='nearest', antialiased=True, cmap=cmap)
+    cm = map.pcolormesh(xx, yy, ice_values, 
+                        shading='nearest', 
+                        antialiased=True, 
+                        cmap=cmap,
+                        norm = COLORMAP_NORM)
+    map.colorbar(cm, extend='max', label='Ice Thickness', ticks=np.arange(0.0, ICE_THICKNESS_MAX, ICE_THICKNESS_MAX / 10.0))
     
 def init_map():
     map = reinit_map()
@@ -115,24 +126,4 @@ def save_coord_map(name):
     plt.close()
     if utils.verbose_mode:
         utils.print_separator()
-
-
-# Initialize a distance_correction_map based on the converted map data
-
-# distance_correction_map = np.empty(np.shape(ice_values))
-
-# # Iterate through the converted map data,
-
-# for y, data_row in enumerate(ice_values):
-#     for x, datapoint in enumerate(data_row):
-#         # If the current data point is not nan, then we can
-#         # convert the given ice thickness to a distance correction factor
-#         if not math.isnan(datapoint):
-#             distance_correction_map[y, x] = ice_thickness_to_correction_factor(datapoint)
-
-#         # If the data point is nan however, then we want to keep it nan
-#         # as the current implementation uses nan as land (so boats do not care)
-#         else:
-#             distance_correction_map[y, x] = math.nan
-
 utils.print_exit(__name__, __file__)

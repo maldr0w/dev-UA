@@ -1,62 +1,123 @@
 import unittest
 import numpy as np
 from ghg_class import CO2, CH4, N2O
+from typing import List, Optional, Type
 import ghg_class
+from ghg_class import GHG
+# ===================================================================
+# Fuel Definition
+EU_EMISSION_FEE_RATE = 20.0
 class Fuel:
-    def __init__(self, name, price_per_kg, lower_heating, co2=0.0, ch4=0.0, n2o=0.0):
+    def __init__(self, name: str, kilogram_price: float, lower_heating: float, pollutants: Optional[List[Type[GHG]]]):
         self.name = name
-        self.pollutants = [
-            CO2(co2),
-            CH4(ch4),
-            N2O(n2o),
-        ]
-        self.unit_gwp = np.sum([pollutant.gwp for pollutant in self.pollutants])
-        # print('unit gwp ' + str(self.unit_gwp) + ' ' + name)
+        self.pollutants = None
+        if pollutants != None:
+            self.pollutants = pollutants
+        self.unit_gwp = 0.0
+        if self.pollutants != None:
+            self.unit_gwp = np.sum([pollutant.global_warming_potential for pollutant in self.pollutants])
         self.lower_heating = lower_heating
-        self.price = price_per_kg
-        # self.heuristic_correction = 1.0
+        self.price = kilogram_price
+
     def __str__(self):
         output = f"{self.name.upper()}\n\tLower heating: {self.lower_heating} kWh/kg\n\tPrice: {self.price} €/kg\n\tPollutants: "
         for pollutant in self.pollutants:
             output = f"{output}\n\t\t{pollutant}"
         return f"{output}\n"
-    def set_heuristic_correction(self, other, ship):
-        self_costs = ship.get_costs(self, ship.v_max)
-        other_costs = ship.get_costs(other, ship.v_max)
-        self.heuristic_correction = self_costs / other_costs
+      
+    def get_consumption_price(self, weight: float) -> float:
+        ''' Get the consumption price at a provided weight
+        :param weight: float - the weight in question
+        :return: float - the calculated price (consumption)
+        '''
+        if weight > 0.0:
+            price = weight * self.price
+            return price
+        return 0.0
+    
+    def get_consumption_price_range(self, weights: List[float]) -> List[float]:
+        ''' Get a range of consumption prices across a domain of weight values
+        :param weights: List[float] - the domain of weight values
+        :return: List[float] - the price range (consumption) 
+        '''
+        prices = []
+        for weight in weights:
+            if weight > 0.0:
+                price = self.get_consumption_price(weight)
+                prices.append(price)            
+        return prices
 
-    def set_heuristic_cost(self, other, ship):
-        s_cost = ship.get_costs(self, ship.v_max)
-        o_cost = ship.get_costs(other, ship.v_max)
-        self.heuristic_cost = (s_cost + o_cost) / 2
-    def set_unit_price(self, ship):
-        self.unit_price = ship.get_costs(self, ship.v_max, distance=1.0)
-       
-    def get_price(self,weight=1.0):
-        return weight * self.price
-            
-    def get_emissions(self,weight=1.0):
-        return [weight * pollutant.factor for pollutant in self.pollutants]
-    def gwps(self,weight=1.0):
-        return [weight * type.factor * type.gwp for type in self.emission_factors]
-        # if self.emission_factors.__len__() > 0:
-        #     return [weight * type.factor * get_gwp(type.name) for type in self.emission_factors]
-        # else:
-        #     return [0.0]
-    def equiv_tons_co2(self, weight=1.0):
-        return (weight * self.unit_gwp) / 1_000_000.0
-    def get_emission_price(self, weight=1.0):
-        return 20.0 * self.equiv_tons_co2(weight=weight)
-        # return 20.0 * (np.sum(self.get_gwp(weight=weight)) / 1_000_000.0)
+    def get_emission_tonnage(self, weight: float) -> float:
+        ''' Get the emission tonnage at a provided weight
+        :param weight: float - the weight in question
+        :return: float - the calculated tonnage
+        '''
+        if weight > 0.0:
+            if self.unit_gwp > 0.0:
+                grams = weight * self.unit_gwp 
+                tons = grams / 1_000_000.0
+                return tons
+        return 0.0
+    def get_emission_tonnage_range(self, weights: List[float]) -> List[float]:
+        ''' Get a range of emission tonnage across a domain of weight values
+        :param weights: List[float] - the domain of weight values
+        :return: List[float] - the tonnage range 
+        '''
+        tonnage_values = []
+        for weight in weights:
+            if weight > 0.0:
+                tons = self.get_emission_tonnage(weight)
+                tonnage_values.append(tons)
+        return tonnage_values
+
+    def get_emission_price(self, weight: float) -> float:
+        ''' Get the emission price at a provided weight
+        :param weight: float - the weight in question
+        :return: float - the calculated price (emission)
+        '''
+        price = EU_EMISSION_FEE_RATE * self.get_emission_tonnage(weight)
+        return price
+    def get_emission_price_range(self, weights: List[float]) -> List[float]:
+        ''' Get a range of emission prices across a domain of weight values
+        :param weights: List[float] - the domain of weight values
+        :return: List[float] - the price range (emission) 
+        '''
+        prices = []
+        for tons_emitted in self.get_emission_tonnage_range(weights):
+            price = EU_EMISSION_FEE_RATE * tons_emitted 
+            prices.append(price)
+        return prices
+
+    def get_total_price(self, weight: float) -> float:
+        ''' Get the price at a provided weight
+        :param weight: float - the weight in question
+        :return: float - the calculated price (emission and consumption)
+        '''
+        consumption_price = self.get_consumption_price(weight)
+        emission_price = self.get_emission_price(weight)
+        return consumption_price + emission_price
+
+    def get_total_price_range(self, weights: List[float]) -> List[float]:
+        ''' Get a range of prices across a domain of weight values
+        :param weights: List[float] - the domain of weight values
+        :return: List[float] - the price range (emission and consumption) 
+        '''
+        prices = []
+        for weight in weights:
+            if weight > 0.0:
+                price = self.get_total_price(weight)
+                prices.append(price)
+        return prices
+# ===================================================================
+# Diesel Definition
+DIESEL_POLLUTANTS = [CO2(3206.), CH4(0.06), N2O(0.15)]
 class Diesel(Fuel):
     def __init__(self):
         super().__init__('diesel',
                          0.78, 
                          11.83, 
-                         co2=3206., 
-                         ch4=0.06,
-                         n2o=0.15)
-
+                         DIESEL_POLLUTANTS)
+# Diesel Unit Tests
 class TestDiesel(unittest.TestCase):
     def test_name(self):
         diesel = Diesel()
@@ -81,38 +142,38 @@ class TestDiesel(unittest.TestCase):
         self.assertIsInstance(diesel.pollutants[0], 
                               CO2,
                               'CO2 error for Diesel, type assertion failed')
-        self.assertEqual(diesel.pollutants[0].factor,
-                         CO2(3206.).factor, 
+        self.assertEqual(diesel.pollutants[0].global_warming_potential,
+                         CO2(3206.).global_warming_potential, 
                          'CO2 error for Diesel, factor not correct')
         self.assertIsInstance(diesel.pollutants[1], 
                               CH4,
                               'CH4 error for Diesel, type assertion failed')
-        self.assertEqual(diesel.pollutants[1].factor,
-                         CH4(0.06).factor, 
+        self.assertEqual(diesel.pollutants[1].global_warming_potential,
+                         CH4(0.06).global_warming_potential, 
                          'CH4 error for Diesel, factor not correct')
         self.assertIsInstance(diesel.pollutants[2], 
                               N2O,
                               'N2O error for Diesel, type assertion failed')
-        self.assertEqual(diesel.pollutants[2].factor,
-                         N2O(0.15).factor, 
+        self.assertEqual(diesel.pollutants[2].global_warming_potential,
+                         N2O(0.15).global_warming_potential, 
                          'N2O error for Diesel, factor not correct')
 
     def test_unit_gwp(self):
         diesel = Diesel()
-        expected_unit_gwp = CO2(3206.0).gwp + CH4(0.06).gwp + N2O(0.15).gwp
+        expected_unit_gwp = CO2(3206.0).global_warming_potential + CH4(0.06).global_warming_potential + N2O(0.15).global_warming_potential
         self.assertEqual(diesel.unit_gwp,
                          expected_unit_gwp,
                          f"wrong unit gwp for diesel, got {diesel.unit_gwp}, expected {expected_unit_gwp} as")
-
+# ===================================================================
+# Natural Gas Definition
+NATURAL_GAS_POLLUTANTS = [CO2(2750.0), CH4(51.2), N2O(0.11)]
 class NaturalGas(Fuel):
     def __init__(self):
         super().__init__('natural gas',
                          0.98,
                          12.9,
-                         co2=2750.0,
-                         ch4=51.2,
-                         n2o=0.11)
-
+                         NATURAL_GAS_POLLUTANTS)
+# Natural Gas Unit Tests
 class TestNaturalGas(unittest.TestCase):
     def test_name(self):
         natural_gas = NaturalGas()
@@ -137,35 +198,37 @@ class TestNaturalGas(unittest.TestCase):
         self.assertIsInstance(natural_gas.pollutants[0], 
                               CO2,
                               'CO2 error for NaturalGas, type assertion failed')
-        self.assertEqual(natural_gas.pollutants[0].factor, 
-                         CO2(2750.0).factor,
+        self.assertEqual(natural_gas.pollutants[0].global_warming_potential, 
+                         CO2(2750.0).global_warming_potential,
                          'CO2 error for NaturalGas, factor not correct')
 
         self.assertIsInstance(natural_gas.pollutants[1], 
                               CH4,
                               'CH4 error for NaturalGas, type assertion failed')
-        self.assertEqual(natural_gas.pollutants[1].factor,
-                         CH4(51.2).factor)
+        self.assertEqual(natural_gas.pollutants[1].global_warming_potential,
+                         CH4(51.2).global_warming_potential)
 
         self.assertIsInstance(natural_gas.pollutants[2], 
                               N2O,
                               'N2O error for NaturalGas, type assertion failed')
-        self.assertEqual(natural_gas.pollutants[2].factor, N2O(0.11).factor)
+        self.assertEqual(natural_gas.pollutants[2].global_warming_potential, N2O(0.11).global_warming_potential)
 
     def test_unit_gwp(self):
         natural_gas = NaturalGas()
-        expected_unit_gwp = CO2(2750.0).gwp + CH4(51.2).gwp + N2O(0.11).gwp
+        expected_unit_gwp = CO2(2750.0).global_warming_potential + CH4(51.2).global_warming_potential + N2O(0.11).global_warming_potential
         self.assertEqual(natural_gas.unit_gwp,
                          expected_unit_gwp,
                          f"wrong unit gwp for diesel, got {natural_gas.unit_gwp}, expected {expected_unit_gwp} as")
-
+# ===================================================================
+# Methanol Definition
+METHANOL_POLLUTANTS = [CO2(1380.0)]
 class Methanol(Fuel):
     def __init__(self):
         super().__init__('methanol',
                          0.325,
                          5.55,
-                         co2=1380.0)
-
+                         METHANOL_POLLUTANTS)
+# Metanol Unit Tests
 class TestMethanol(unittest.TestCase):
     def test_name(self):
         methanol = Methanol()
@@ -190,29 +253,26 @@ class TestMethanol(unittest.TestCase):
         self.assertIsInstance(methanol.pollutants[0], 
                               CO2,
                               'CO2 error for Diesel, type assertion failed')
-        self.assertEqual(methanol.pollutants[0].factor,
-                         CO2(1380.0).factor,
+        self.assertEqual(methanol.pollutants[0].global_warming_potential,
+                         CO2(1380.0).global_warming_potential,
                          'CO2 error for Methanol, factor not correct')
-        self.assertIsInstance(methanol.pollutants[1], 
-                              CH4,
-                              'CH4 error for Diesel, type assertion failed')
-        self.assertIsInstance(methanol.pollutants[2], 
-                              N2O,
-                              'N2O error for Diesel, type assertion failed')
 
     def test_unit_gwp(self):
         natural_gas = Methanol()
-        expected_unit_gwp = CO2(1380.0).gwp 
+        expected_unit_gwp = CO2(1380.0).global_warming_potential 
         self.assertEqual(natural_gas.unit_gwp,
                          expected_unit_gwp,
                          f"wrong unit gwp for diesel, got {natural_gas.unit_gwp}, expected {expected_unit_gwp} as")
-
+# ===================================================================
+# DME Definition
+DME_POLLUTANTS = [CO2(1927.)]
 class DME(Fuel):
     def __init__(self):
         super().__init__('dme',
                          0.7,
                          8.0,
-                         co2=1927.)
+                         DME_POLLUTANTS)
+# DME Unit Tests
 class TestDME(unittest.TestCase):
     def test_name(self):
         dme = DME()
@@ -225,35 +285,28 @@ class TestDME(unittest.TestCase):
         self.assertIsInstance(dme.pollutants[0], 
                               CO2,
                               'CO2 error for DME, type assertion failed')
-        self.assertEqual(dme.pollutants[0].factor,
-                         CO2(1927.).factor,
+        self.assertEqual(dme.pollutants[0].global_warming_potential,
+                         CO2(1927.).global_warming_potential,
                          'CO2 error for DME, factor not correct')
 
-        self.assertIsInstance(dme.pollutants[1], 
-                              CH4,
-                              'CH4 error for DME, type assertion failed')
-        self.assertIsInstance(dme.pollutants[2], 
-                              N2O,
-                              'N2O error for DME, type assertion failed')
-
     def test_unit_gwp(self):
-        dme = DME()
-        expected_unit_gwp = CO2(1927.0).gwp 
-        self.assertEqual(dme.unit_gwp,
+        expected_unit_gwp = CO2(1927.0).global_warming_potential
+        self.assertEqual(DME().unit_gwp,
                          expected_unit_gwp,
-                         f"wrong unit gwp for DME, got {dme.unit_gwp}, expected {expected_unit_gwp} as")
-
+                         f"wrong unit gwp for DME, got {DME().unit_gwp}, expected {expected_unit_gwp} as")
+# ===================================================================
+# Hydrogen Definition
+HYDROGEN_POLLUTANTS = None
 class Hydrogen(Fuel):
     def __init__(self):
         super().__init__('hydrogen',
                          7.0, 
-                         33.3)
+                         33.3,
+                         HYDROGEN_POLLUTANTS)
+# Hydrogen Unit Tests
 class TestHydrogen(unittest.TestCase):
     def test_name(self):
-        hydrogen = Hydrogen()
-        self.assertEqual(hydrogen.name, 
-                         'hydrogen',
-                         'Name error for Hydrogen')
+        self.assertEqual(Hydrogen().name, 'hydrogen')
 
     def test_price(self):
         self.assertEqual(Hydrogen().price, 7.0)
@@ -262,23 +315,23 @@ class TestHydrogen(unittest.TestCase):
         self.assertEqual(Hydrogen().lower_heating, 33.3)
 
     def test_pollutants(self):
-        hydrogen = Hydrogen()
-        self.assertIsInstance(hydrogen.pollutants[0], CO2)
-        self.assertIsInstance(hydrogen.pollutants[1], CH4)
-        self.assertIsInstance(hydrogen.pollutants[2], N2O)
+        self.assertIsNone(Hydrogen().pollutants)
 
+    def test_unit_gwp(self):
+        self.assertEqual(Hydrogen().unit_gwp, 0.0)
+# ===================================================================
+# B20 Definition
+B20_POLLUTANTS = None
 class B20(Fuel):
     def __init__(self):
         super().__init__('b20',
                          1.58,
-                         11.83)
-
+                         11.83,
+                         B20_POLLUTANTS)
+# B20 Unit Tests
 class TestB20(unittest.TestCase):
     def test_name(self):
-        b20 = B20()
-        self.assertEqual(b20.name,
-                         'b20',
-                         'Name error for B20')
+        self.assertEqual(B20().name, 'b20')
 
     def test_price(self):
         self.assertEqual(B20().price, 1.58)
@@ -287,11 +340,11 @@ class TestB20(unittest.TestCase):
         self.assertEqual(B20().lower_heating, 11.83)
 
     def test_pollutants(self):
-        b20 = B20()
-        self.assertIsInstance(b20.pollutants[0], CO2)
-        self.assertIsInstance(b20.pollutants[1], CH4)
-        self.assertIsInstance(b20.pollutants[2], N2O)
+        self.assertIsNone(B20().pollutants)
 
+    def test_unit_gwp(self):
+        self.assertEqual(B20().unit_gwp, 0.0)
+# ===================================================================
 if __name__ == '__main__':
     unittest.main()
 
