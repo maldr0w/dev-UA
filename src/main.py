@@ -1,10 +1,9 @@
-
 def print_help():
     print ('FLAGS')
     print ('\t --help     - Display help info')
     print ('\t -h ')
     print ('\t --graph    - Generate graphs at the specified ice thickness')
-    print ('\t -t           Ex: --graph=<thickness> (. as decimal point)')
+    print ('\t -g           Ex: --graph=<thickness> (. as decimal point)')
     print ('\t --test     - Perform test run')
     print ('\t -t')
     print ('\t --profile  - Perform profiled run')
@@ -13,12 +12,14 @@ def print_help():
     print ('\t -s           Ex: --start=<lat>,<lon> (no spaces, . as decimal point)')
     print ('\t --end      - Input end coordinate')
     print ('\t -e           Ex: --end=<lat>,<lon> (no spaces, . as decimal point)')
+    print ('\t --verbose  - Enable verbose mode')
+    print ('\t -v')
 
 import sys, getopt
 def main(argv):
     start, end = None, None
     thickness = None
-    opts, args = getopt.getopt(argv, "hg:tps:e:", ["help","graph=", "test", "profile","start=","end="])
+    opts, args = getopt.getopt(argv, "hg:tps:e:v", ["help","graph=", "test", "profile","start=","end=","verbose"])
     for opt, arg in opts:
         if opt in ('-h', '--help'):
             print_help()
@@ -39,6 +40,9 @@ def main(argv):
             import a_star
             a_star.profile()
             sys.exit()
+        elif opt in ('-v', '--verbose'):
+            import utils
+            utils.verbose_mode = True
     if start != None and end != None:
         import a_star
         a_star.run_search (start, end)        

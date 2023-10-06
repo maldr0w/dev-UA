@@ -8,9 +8,22 @@ To run the program, simply change to the 'src' directory, and enter
 python3 main.py --opt=arg[..]
 ```
 
-For example, if you have coordinates (60.000, 68.000) and (66.898, -162.596), enter
+For example, if you have coordinates (69.376, 33.585) and (66.888, -162.650), enter
 ```
-python3 main.py --start=60.000,68.000 --end=66.898,-162.596
+python3 main.py --start=69.376,33.585 --end=66.888,-162.650
+```
+or
+```
+python3 main.py -s 60.000,68.000 -e 66.898,-162.596
+```
+
+In case you would like to create graphs representing the data of the vessel, simply write
+```
+python3 main.py --graph=0.0
+```
+where the parameter of graph represents the ice thickness at which the data is accurate
+```
+python3 main.py -g 0.0
 ```
 
 For more help and information, enter
