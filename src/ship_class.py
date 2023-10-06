@@ -233,6 +233,14 @@ class Ship:
             cost = float('inf')
 
         return cost
+# Ship Unit Tests
+class TestFuelShip(unittest.TestCase):
+    def setUp(self):
+        self.unit_under_testing = Ship('test')
+    def run(self):
+        self.assertIsNone(self.unit_under_testing.fuel)
+        self.unit_under_testing.set_fuel(Diesel())
+        self.assertIsInstance(self.unit_under_testing.fuel, Diesel)
 # ===================================================================
 # Prizna Definition
 class Prizna(Ship):
@@ -242,26 +250,23 @@ class Prizna(Ship):
                          aux_eng_pow = 84.0,
                          design_speed = 8.0)
 # Prizna Unit Tests
-class TestFuelPrizna(unittest.TestCase):
-    def test_no_fuel(self):
-        self.assertEqual(Prizna().fuel, None)
-    def test_set_fuel(self):
-        ship = Prizna()
-        ship.set_fuel(Methanol())
-        self.assertIsInstance(ship.fuel, Methanol)
 class TestVelocityPrizna(unittest.TestCase):
     def test_no_velocity(self):
+        '''no set velocity'''
         self.assertEqual(Prizna().velocity, None)
 
     def test_no_get_velocity(self):
+        '''get velocity no set velocity'''
         self.assertEqual(Prizna().get_velocity(0.0), 0.0)
 
     def test_set_velocity(self):
+        '''set max velocity'''
         ship = Prizna()
         ship.set_target_velocity(1.0)
         self.assertEqual(ship.velocity, ship.max_velocity)
 
     def test_set_velocity_negative(self):
+        '''set negative velocity'''
         ship = Prizna()
         ship.set_target_velocity(-1.0)
         self.assertEqual(ship.velocity, None)
@@ -285,20 +290,38 @@ class TestVelocityPrizna(unittest.TestCase):
         self.assertEqual(0.0, ship.get_velocity(1.0))
 # ===================================================================
 # Kornati Definition
-# TODO: Kornati Defintion
-# Kornati Unit Tests
-# TODO: Kornati Unit Tests
+class Kornati(Ship):
+    def __init__(self):
+        super().__init__('Kornati',
+                         main_eng_pow = 1764.0,
+                         aux_eng_pow = 840.0,
+                         design_speed = 12.3)
+#
+# Kornati Unit Tests (Omitted)
+# 
+# These unit tests should not be necessary, the funcitonality
+# tested is invariant across subclasses.
+#
 # ===================================================================
 # Petar Hektorovic Definition
-# TODO: Petar Hektorovic Definition
-# Petar Hektorovic Unit Tests
-# TODO: Petar Hektorovic Unit Tests
+class PetarHektorovic(Ship):
+    def __init__(self):
+        super().__init__('Petar Hektorovic',
+                         main_eng_pow = 3600.0,
+                         aux_eng_pow = 1944.0,
+                         design_speed = 15.75)
+#
+# Petar Hektorovic Unit Tests (Omitted, see above)
+#
 # ===================================================================
 if __name__ == '__main__':
     unittest.main()
 ship_list = [
-    Ship("Prizna", 792.0, 84.0, 8.0),
-    Ship("Kornati", 1764.0, 840.0, 12.3),
-    Ship("Petar Hektorovic", 3600.0, 1944.0, 15.75)
+    # Ship("Prizna", 792.0, 84.0, 8.0),
+    Prizna(),
+    # Ship("Kornati", 1764.0, 840.0, 12.3),
+    Kornati(),
+    # Ship("Petar Hektorovic", 3600.0, 1944.0, 15.75)
+    PetarHektorovic()
 ]
 utils.print_exit(__name__, __file__)
