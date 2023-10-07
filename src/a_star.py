@@ -13,6 +13,11 @@ import ship_class
 from fuel_class import Fuel
 import fuel_class
 import data
+coordinate_data = data.dataset['sea_ice_thickness'].coords
+latitude_data, longitude_data = coordinate_data['lat'].to_numpy(), coordinate_data['lon'].to_numpy()
+mean_ice_thickness = np.nanmean(data.ice_values) # (1 * np.nanstd(only_values_ice_thickness))
+HEURISTIC_FUEL = fuel_class.fuel_list[2]
+HEURISTIC_THICKNESS = 0.0
 # ===================================================================
 # Type Definitions
 Latitude: TypeAlias = float
@@ -27,28 +32,55 @@ Coordinate: TypeAlias = tuple[Latitude, Longitude]
 '''Coordinate : (float, float), alias for a coordinate
 Defined by its latitude and longitude
 '''
+class CoordinateClass():
+    def __init__(self, latitude: Latitude, longitude: Longitude):
+        self.latitude: Latitude = latitude
+        self.longitude: Longitude = longitude
+    def great_circle(self, other: Type['__class__']):
+        return great_circle(self.latitude, self.longitude, other.latitude, other.longitude)
 # ===================================================================
-Node: TypeAlias = tuple[int, int]
+IndexPair: TypeAlias = tuple[int, int]
 '''Node : (int, int), alias for a node
 Defined by its relevant indices in the ice thickness dataset
 '''
-NodeSet: TypeAlias = list[Node]
+class NodeClass():
+    def __init__(self, indices: IndexPair):
+        self.indices: IndexPair = indices
+        self.coordinate: CoordinateClass = CoordinateClass(latitude_data[self.indices], longitude_data[self.indices])
+        self.thickness: float = data.ice_values[self.indices]
+
+    def diagonal_distance(self, other: Type['__class__']) -> int:
+        delta_y = abs(other[0] - self[0])
+        delta_x = abs(other[1] - self[1])
+        return max(delta_y, delta_x)
+
+NodeSet: TypeAlias = list[IndexPair]
 '''NodeSet : (int, int) list, alias for a collection of nodes
 Often used to imply paths as well
 '''
-NodeMap: TypeAlias = dict[Node, Node]
+class NodeSetC():
+    def __init__(self):
+        self.nodes = []
+    def push(self, node: NodeClass):
+        self.nodes.append(node)
+NodeMap: TypeAlias = dict[IndexPair, IndexPair]
 '''NodeMapping : (int -> int) list, alias for a dict of nodes
 Used to reconstruct path and keep track of parent nodes in path
 '''
+class NodeMapC():
+    def __init__(self):
+        self.map = {}
+    def insert(self, _from: NodeClass, _to: NodeClass):
+        self.map[_from] = _to
 # ===================================================================
 Score: TypeAlias = float
 '''Score : float, alias for various types of scores around the program
 Meant to show intention of function, or its return value
 '''
-ScoreSet: TypeAlias = dict[Node, Score]
+ScoreSet: TypeAlias = dict[IndexPair, Score]
 '''ScoreSet : ((int, int), float) dict, alias for g score and f score types
 '''
-HeapItem: TypeAlias = tuple[Score, Node]
+HeapItem: TypeAlias = tuple[Score, IndexPair]
 '''HeapItem: (float, (int, int)), alias for the items kept in the heap
 The first item must be a float,
 '''
@@ -61,13 +93,8 @@ SearchResult: TypeAlias = tuple[NodeSet, Score, bool]
 Meant to condense function signature a bit, while keeping the intention of the code clear
 '''
 
-coordinate_data = data.dataset['sea_ice_thickness'].coords
-latitude_data, longitude_data = coordinate_data['lat'].to_numpy(), coordinate_data['lon'].to_numpy()
-mean_ice_thickness = np.nanmean(data.ice_values) # (1 * np.nanstd(only_values_ice_thickness))
-HEURISTIC_FUEL = fuel_class.fuel_list[2]
-HEURISTIC_THICKNESS = 0.0
 
-def find_closest_index(coordinate: Coordinate) -> Node:
+def find_closest_index(coordinate: Coordinate) -> IndexPair:
     '''Finds index in the dataset corresponding to the
     coordinate closest to the provided coordinate 
 
@@ -80,7 +107,7 @@ def find_closest_index(coordinate: Coordinate) -> Node:
 
     # y_idx, x_idx = np.unravel_index(indices=np.argmin(arr_difference), shape=np.shape(arr_difference))
     min_indices = np.argmin(arr_difference)
-    node: Node = np.unravel_index(indices=min_indices, shape=np.shape(arr_difference))
+    node: IndexPair = np.unravel_index(indices=min_indices, shape=np.shape(arr_difference))
     return node
 
 def find_closest_coordinate(coordinate: Coordinate) -> Coordinate:
@@ -89,7 +116,7 @@ def find_closest_coordinate(coordinate: Coordinate) -> Coordinate:
     :param coordinate: tuple[float, float] - The coordinate in question (lat, lon)
     :return: tuple[float, float] - The coordinate's closest match
     '''
-    node: Node = find_closest_index(coordinate)
+    node: IndexPair = find_closest_index(coordinate)
     coordinate: Coordinate = (latitude_data[node], longitude_data[node])
     return coordinate
 # Initializing A* search algorithm
@@ -122,8 +149,8 @@ def great_circle(
     
 ICE_THICKNESS_LIMIT = 2.1
 def cost(
-        node: Node, 
-        neighbor: Node,
+        node: IndexPair, 
+        neighbor: IndexPair,
         ship: Type[Ship]
         ) -> Score:
     ''' Cost function [g(n)]
@@ -156,11 +183,14 @@ def cost(
 
     return estimated_cost
   
-WEIGHT_BASE: float = 1.0001
-EPSILON: float = 0.0025
+# DISTANT_INACCURACY_CARRIER: float = 0.05
+# DISTANT_INACCURACY_AMPLITUDE: float = 0.1
+INACCURACY_CONSTANT: float = 0.001
+WEIGHT_BASE: float = 1.000 + INACCURACY_CONSTANT
+EPSILON: float = 0.01
 def heuristic(
-        node: Node, 
-        goal: Node, 
+        node: IndexPair, 
+        goal: IndexPair, 
         ship: Type[Ship]
         ) -> Score:
     '''
@@ -236,7 +266,7 @@ def heuristic(
     diagonal_distance: int = max(delta_x, delta_y)
     diagonal_distance_ratio: int = diagonal_distance / 432
 
-    weighting_exponent: float = WEIGHT_BASE + weight_sigma
+    weighting_exponent: float = WEIGHT_BASE - weight_sigma
    
     lat1 = latitude_data[node]
     lat2 = latitude_data[goal]
@@ -246,17 +276,18 @@ def heuristic(
 
     great_circle_distance = great_circle(lat1, lon1, lat2, lon2)
 
-    weighted_distance = np.power(great_circle_distance, weighting_exponent)
-    if utils.verbose_mode:
-        print('dist')
-        print(great_circle_distance)
-        print('weighted')
-        print(weighted_distance)
-    estimated_cost = ship.unit_cost * weighted_distance
+    # weighted_distance = np.power(great_circle_distance, weighting_exponent)
+    weighted_distance = 1.001 * great_circle_distance
+    # if utils.verbose_mode:
+    print('dist')
+    print(great_circle_distance)
+    print('weighted')
+    print(weighted_distance)
+    estimated_cost = ship.unit_cost * great_circle_distance
     return estimated_cost
 
 def reconstruct_path(
-        current_node: Node,
+        current_node: IndexPair,
         came_from: NodeMap
         ) -> NodeSet: 
     ''' Returns reconstructed path as a list of nodes from start node to goal node
@@ -299,7 +330,7 @@ def A_star_search_algorithm(
     ship.set_target_velocity(0.88)
 
     # Initialize unit cost as the most expensive overall, Hydrogen
-    ship.set_fuel(fuel_class.Hydrogen())
+    ship.set_fuel(fuel_class.Methanol())
     ship.set_unit_cost()
 
     # Set to actual fuel in use
@@ -318,8 +349,8 @@ def A_star_search_algorithm(
     # start: Node = (start_x, start_y)
     # goal: Node = (goal_x, goal_y)
     # Get nodes
-    start: Node = find_closest_index(start_coordinate)
-    goal: Node = find_closest_index(end_coordinate)
+    start: IndexPair = find_closest_index(start_coordinate)
+    goal: IndexPair = find_closest_index(end_coordinate)
 
 
     # defining scoreing
@@ -356,7 +387,7 @@ def A_star_search_algorithm(
     while open_heap:
         # Get lowest f_score element
         elem: HeapItem = heappop(open_heap)
-        current_node: Node = elem[1]
+        current_node: IndexPair = elem[1]
         closed_set.append(current_node)
 
         # If at goal, return the path used
@@ -372,7 +403,7 @@ def A_star_search_algorithm(
             # x, y = current_node
             neighbor_y: int = current_node[0] + dy
             neighbor_x: int = current_node[1] + dx
-            neighbor: Node = (neighbor_y, neighbor_x)
+            neighbor: IndexPair = (neighbor_y, neighbor_x)
             # If neighbor is inside chosen bounds
             if 0 <= neighbor_x < x_bound and 0 <= neighbor_y < y_bound:
                 # Proper control flow requires this statement to fail,
@@ -408,7 +439,7 @@ def A_star_search_algorithm(
                 f_score[neighbor] = g_score[neighbor] + heuristic(neighbor, goal, ship)
 
                 # checking if neighbor has been explored
-                # if neighbor not in [i[1] for i in open_heap]:
+                # if neighbor not in [node for (_, node) in open_heap]:
                 #     heappush(open_heap, (f_score[neighbor], neighbor))  # add neighbor to set of explorable nodes
                 heappush(open_heap, (f_score[neighbor], neighbor))
 
@@ -426,7 +457,7 @@ def plot_path(path: NodeSet, map=None):
         print('\tPlotting path...')
     [data.plot_coord(lon, lat, map=map)
         for lon, lat in
-        [(longitude_data[y_p, x_p], latitude_data[y_p, x_p]) for x_p, y_p in path]
+        [(longitude_data[node], latitude_data[node]) for node in path]
     ]
     print('\tFinished.\n')
 
@@ -474,31 +505,90 @@ start_coordinate: Coordinate = (66.898, -162.596)
 end_coordinate: Coordinate = (68.958, 33.082)
 
 # import distance_correction as dist_corr
-
+class Coord():
+    def __init__(self, lat: Latitude, lon: Longitude):
+        self.lat: Latitude = lat
+        self.lon: Longitude = lon
+        self.node = find_closest_index((lat, lon))
+        self.thickness = data.ice_values[self.node]
+    def get_thickness(self):
+        return self.thickness
+import unittest
 class Port():
     def __init__(self, name: str, position: Coordinate):
         self.name: str = name
         self.position: Coordinate = position
+        lat, lon = position
+        self.coord = Coord(lat, lon)
     def __str__(self) -> str:
         return f"{self.name}{self.position}"
+    def get_position(self) -> Coordinate:
+        return self.position
+
+class PortBaseTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        ''' On inherited classes, run setUp '''
+        if cls is not PortBaseTest and cls.setUp is not PortBaseTest.setUp:
+            original_setUp = cls.setUp
+            def setUpOverride(self, *args, **kwargs):
+                PortBaseTest.setUp(self)
+                return original_setUp(self, *args, **kwargs) 
+            cls.setUp = setUpOverride
+
+    def setUp(self):
+        ''' Invalid to test a port without any data'''
+        self.port = None
+
+    def test_not_nan(self):
+        if self.port != None:
+            self.assertNotEqual(self.port.coord.get_thickness(), float('nan'))
+        
 class Mongstad(Port):
     def __init__(self):
         super().__init__('Mongstad', (60.810, 5.032))
+class MongstadTest(PortBaseTest):
+    def setUp(self):
+        self.port = Mongstad()
+
 class Mizushima(Port):
     def __init__(self):
         super().__init__('Mizushima', (34.504, 133.714))
+class MizushimaTest(PortBaseTest):
+    def setUp(self):
+        self.port = Mizushima()
+
 class Kotzebue(Port):
     def __init__(self):
         super().__init__('Kotzebue', (66.898, -162.596))
+class KotzebueTest(PortBaseTest):
+    def setUp(self):
+        self.port = Kotzebue()
+
 class Murmansk(Port):
     def __init__(self):
         super().__init__('Murmansk', (68.958, 33.082))
+class MurmanskTest(PortBaseTest):
+    def setUp(self):
+        self.port = Murmansk()
+
 class Reykjavik(Port):
     def __init__(self):
         super().__init__('Reykjavik', (64.963, 19.103))
+class ReykjavikTest(PortBaseTest):
+    def setUp(self):
+        self.port = Reykjavik()
+
 class Tasiilap(Port):
     def __init__(self):
         super().__init__('Tasiilap', (65.604, -37.707))
+class TasiilapTest(PortBaseTest):
+    def setUp(self):
+        self.port = Tasiilap()
+
+if __name__ == '__main__':
+    unittest.main()
+
 class Route():
     def __init__(self, start: Type[Port], goal: Type[Port]):
         self.start: Type[Port] = start
@@ -534,7 +624,7 @@ def plot_route(route: Route, fuel: Type[Fuel], ship: Type[Ship]):
     plot_path(path, data.init_map())
 
     score: Score = result[1]
-    path_label: str = f"{route} - {ship.name} - {fuel.name} - {score}"
+    path_label: str = f"{ship.name} - {fuel.name} - {route} - {score}"
     data.save_coord_map(path_label)
     print(utils.separator)
 
