@@ -157,7 +157,7 @@ class Ship:
         return duration_values
         
 
-    def get_resistive_power(self, thickness: float, ice_factor=2.5) -> float:
+    def get_resistive_power(self, thickness: float, ice_factor=2.33) -> float:
         '''Gets the resistive power the ice imparts on the ship
 
         :param thickness: float - The thickness in question
