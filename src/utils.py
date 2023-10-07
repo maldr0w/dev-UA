@@ -1,6 +1,7 @@
 verbose_mode = False
 def enable_verbose_mode():
     verbose_mode = True
+separator = '\n<' + (68 * '=') + '>\n'
 def print_separator():
     if verbose_mode:
         s = 68 * '='

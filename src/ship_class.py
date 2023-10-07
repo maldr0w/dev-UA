@@ -8,22 +8,29 @@ import utils
 from data import ICE_THICKNESS_MAX
 import numpy as np
 from fuel_class import Fuel, Diesel, NaturalGas, Methanol, DME, Hydrogen, B20, HEURISTIC_FUEL_TYPE
-from typing import Type, List, Optional
+from typing import Type, TypeAlias, List, Optional
 utils.print_entrypoint(__name__, __file__)
+# ===================================================================
+# Type Definitions
+KiloWatts: TypeAlias = float
 # ===================================================================
 # Ship Definition
 ICE_THICKNESS_LIMIT = 2.1
 class Ship:
-    def __init__(self, name, main_eng_pow=0.0, aux_eng_pow=0.0, design_speed=0.0):
+    def __init__(
+            self, name: str, 
+            main_eng_pow: KiloWatts = 0.0, aux_eng_pow: KiloWatts = 0.0, 
+            design_speed: float = 0.0
+            ):
         # Set the name of the ship
-        self.name = name
+        self.name: str = name
 
         # Initialize fuel and velocity to None
-        self.fuel = None
-        self.velocity = None
+        self.fuel: Optional[Type[Fuel]] = None
+        self.velocity: Optional[float] = None
 
         # Initialize remaining values
-        self.total_power = main_eng_pow + aux_eng_pow
+        self.total_power: KiloWatts = main_eng_pow + aux_eng_pow
         self.max_velocity = 0.514 * design_speed
         self.k = self.total_power / (self.max_velocity ** 3)
 
@@ -112,7 +119,7 @@ class Ship:
         self.velocity = original_velocity
         return consumption_values
 
-    def get_cost_range(self, thickness: float, distance=utils.unit_distance) -> List[float]:
+    def get_cost_range(self, thickness: float, distance: float = utils.unit_distance) -> list[float]:
         ''' Get range of cost values
         :param thickness: float - Ice thickness
         :param distance: float - Distance to be considered
@@ -124,11 +131,15 @@ class Ship:
             costs.append(cost)
         return costs
 
-    def get_duration_range(self, thickness: float, distance=utils.unit_distance) -> List[float]:
+    def get_duration_range(
+            self,
+            thickness: float,
+            distance: float = utils.unit_distance
+            ) -> list[float]:
         ''' Get range of duration values
         :param thickness: float - Ice thickness
         :param distance: float - Distance to be considered
-        :return: List[float] - Duration values, over the domain of possible speeds
+        :return: list[float] - Duration values, over the domain of possible speeds
         '''
         # Save initial state
         original_velocity = self.velocity

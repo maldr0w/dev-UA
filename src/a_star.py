@@ -2,15 +2,64 @@ import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
 import utils
-from typing import List, Type
+from typing import List, Type, Tuple, TypeAlias
 
 
 
 utils.print_entrypoint(__name__, __file__)
 import graph_creation
+from ship_class import Ship
 import ship_class
+from fuel_class import Fuel
 import fuel_class
 import data
+# ===================================================================
+# Type Definitions
+Latitude: TypeAlias = float
+''' Latitude : float, alias for latitude values
+Meant as a marker to show function API usage
+'''
+Longitude: TypeAlias = float
+''' Longitude : float, alias for longitude values
+Pair to latitude
+'''
+Coordinate: TypeAlias = tuple[Latitude, Longitude]
+'''Coordinate : (float, float), alias for a coordinate
+Defined by its latitude and longitude
+'''
+# ===================================================================
+Node: TypeAlias = tuple[int, int]
+'''Node : (int, int), alias for a node
+Defined by its relevant indices in the ice thickness dataset
+'''
+NodeSet: TypeAlias = list[Node]
+'''NodeSet : (int, int) list, alias for a collection of nodes
+Often used to imply paths as well
+'''
+NodeMap: TypeAlias = dict[Node, Node]
+'''NodeMapping : (int -> int) list, alias for a dict of nodes
+Used to reconstruct path and keep track of parent nodes in path
+'''
+# ===================================================================
+Score: TypeAlias = float
+'''Score : float, alias for various types of scores around the program
+Meant to show intention of function, or its return value
+'''
+ScoreSet: TypeAlias = dict[Node, Score]
+'''ScoreSet : ((int, int), float) dict, alias for g score and f score types
+'''
+HeapItem: TypeAlias = tuple[Score, Node]
+'''HeapItem: (float, (int, int)), alias for the items kept in the heap
+The first item must be a float,
+'''
+Heap: TypeAlias = list[HeapItem]
+'''Heap : (float, (int, int)) list, alias for our binary heap
+IDE support, etc, helps a lot in debugging and keeps our code clear in intention
+'''
+SearchResult: TypeAlias = tuple[NodeSet, Score, bool]
+'''SearchResult : ((int, int) list, float, bool), alias for the return type of A*
+Meant to condense function signature a bit, while keeping the intention of the code clear
+'''
 
 coordinate_data = data.dataset['sea_ice_thickness'].coords
 latitude_data, longitude_data = coordinate_data['lat'].to_numpy(), coordinate_data['lon'].to_numpy()
@@ -18,32 +67,39 @@ mean_ice_thickness = np.nanmean(data.ice_values) # (1 * np.nanstd(only_values_ic
 HEURISTIC_FUEL = fuel_class.fuel_list[2]
 HEURISTIC_THICKNESS = 0.0
 
-def find_closest_index(coordinate):
-    '''
-    Finds index in the dataset corresponding to the
+def find_closest_index(coordinate: Coordinate) -> Node:
+    '''Finds index in the dataset corresponding to the
     coordinate closest to the provided coordinate 
+
+    :param coordinate: tuple[float, float] - Coordinate to find index of (lat, lon)
+    :return: tuple[int, int] - The indices of the coordinate point
        '''
-    latitude_difference = np.apply_along_axis(lambda x: abs(coordinate[0] - x), 0, latitude_data)
-    longitude_difference = np.apply_along_axis(lambda x: abs(coordinate[1] - x), 0, longitude_data)
-    arr_difference = np.apply_along_axis(lambda x: x[0] + x[1], 2, np.dstack((latitude_difference, longitude_difference)))
+    latitude_difference: list[list[float]] = np.apply_along_axis(lambda x: abs(coordinate[0] - x), 0, latitude_data)
+    longitude_difference: list[list[float]] = np.apply_along_axis(lambda x: abs(coordinate[1] - x), 0, longitude_data)
+    arr_difference: list[list[float]] = np.apply_along_axis(lambda x: x[0] + x[1], 2, np.dstack((latitude_difference, longitude_difference)))
 
-    y_idx, x_idx = np.unravel_index(indices=np.argmin(arr_difference), shape=np.shape(arr_difference))
-    return y_idx, x_idx
+    # y_idx, x_idx = np.unravel_index(indices=np.argmin(arr_difference), shape=np.shape(arr_difference))
+    min_indices = np.argmin(arr_difference)
+    node: Node = np.unravel_index(indices=min_indices, shape=np.shape(arr_difference))
+    return node
 
-def find_closest_coordinate(coordinate):
-    idx = find_closest_index(coordinate)
-    return latitude_data[idx], longitude_data[idx]
+def find_closest_coordinate(coordinate: Coordinate) -> Coordinate:
+    '''Find a coordinate's closest coordinate in our coordinate dataset 
+
+    :param coordinate: tuple[float, float] - The coordinate in question (lat, lon)
+    :return: tuple[float, float] - The coordinate's closest match
+    '''
+    node: Node = find_closest_index(coordinate)
+    coordinate: Coordinate = (latitude_data[node], longitude_data[node])
+    return coordinate
 # Initializing A* search algorithm
-
 
 from scipy import stats
 
-# only_values_ice_thickness = np.extract(np.invert(np.logical_or(np.isnan(dist_corr.mapdata), np.less(dist_corr.mapdata, ICE_THRESHOLD))), dist_corr.mapdata)
-
 MEAN_EARTH_RADIUS_METERS = 6_371_000.0
 def great_circle(
-        lat1: float, lon1: float, 
-        lat2: float, lon2: float
+        lat1: Latitude, lon1: Longitude, 
+        lat2: Latitude, lon2: Longitude
         ) -> float:
     ''' Calculates distance between coordinates
     :param lat1: float - Latitude of initial point
@@ -65,28 +121,33 @@ def great_circle(
     return c * MEAN_EARTH_RADIUS_METERS
     
 ICE_THICKNESS_LIMIT = 2.1
-def cost(node: List[int], neighbor: List[int], ship: Type[ship_class.Ship], trip_fuel):
+def cost(
+        node: Node, 
+        neighbor: Node,
+        ship: Type[Ship]
+        ) -> Score:
     ''' Cost function [g(n)]
-    :param node: List[int] - The indices of the node
-    :param neighbor: List[int] - The indicies of the neighbor
-    :param ship: Type[ship_class.Ship] - The ship in question
+    :param node: tuple[int, int] - The indices of the node
+    :param neighbor: tuple[int, int] - The indicies of the neighbor
+    :param ship: Type[Ship] - The ship in question
     :return: float - The estimated cost between node and neighbor
 
     Using the same calculation as the heuristic, 
     this function returns the actual cost, using the average of the
     node thickness and the neighbor thickness, as well as a specified fuel
     '''
-    x1, y1 = node
-    x2, y2 = neighbor
+    # FLIPPED
+    # x1, y1 = node
+    # x2, y2 = neighbor
 
-    lat1 = latitude_data[y1, x1]
-    lat2 = latitude_data[y2, x2]
+    lat1 = latitude_data[node]
+    lat2 = latitude_data[neighbor]
 
-    lon1 = longitude_data[y1, x1]
-    lon2 = longitude_data[y2, x2]
+    lon1 = longitude_data[node]
+    lon2 = longitude_data[neighbor]
 
     estimated_distance = great_circle(lat1, lon1, lat2, lon2)
-    estimated_thickness = 0.5 * (data.ice_values[y1, x1] + data.ice_values[y2, x2])
+    estimated_thickness = 0.5 * (data.ice_values[node] + data.ice_values[neighbor])
 
     if estimated_thickness <= ICE_THICKNESS_LIMIT:
         estimated_cost = ship.get_cost(estimated_thickness, estimated_distance)
@@ -95,14 +156,21 @@ def cost(node: List[int], neighbor: List[int], ship: Type[ship_class.Ship], trip
 
     return estimated_cost
   
-MANHATTAN_DISTANCE_MAX = 2 * 432 
-
-WEIGHT_BASE = 1.0001
-EPSILON = 0.025
-def heuristic(node, goal, ship, fuel):
+WEIGHT_BASE: float = 1.0001
+EPSILON: float = 0.0025
+def heuristic(
+        node: Node, 
+        goal: Node, 
+        ship: Type[Ship]
+        ) -> Score:
     '''
     heuristic estimate (Diagonal distance) [h(n)]
     Estimate of cost to reach goal node from specified node.
+
+    :param node: tuple[int, int] - The indices of the current node
+    :param goal: tuple[int, int] - The indices of the goal node
+    :param ship: Type[Ship] - The ship to calculate for
+    :return: float - The overestimated cost to reach the goal
 
     ==GOAL==
     The goal of the heuristic is to provide an overestimate at every point,
@@ -148,105 +216,56 @@ def heuristic(node, goal, ship, fuel):
     The weighting exponent is the key to this "dumb" way.
     '''
     # print('HEURISTIC')
-    x1, y1 = node
-    x2, y2 = goal
+    # FLIPPED
+    # x1, y1 = node
+    # x2, y2 = goal
+    y1, x1 = node
+    y2, x2 = goal
 
     delta_x = abs(x2 - x1)
     delta_y = abs(y2 - y1)
 
-    percent_x = delta_x / 432
-    sigma_x = EPSILON * percent_x
+    percent_x: int = delta_x / 432
+    sigma_x: float = EPSILON * float(percent_x)
 
-    percent_y = delta_y / 432
-    sigma_y = EPSILON * percent_y
+    percent_y: int = delta_y / 432
+    sigma_y: float = EPSILON * percent_y
 
-    weight_sigma = sigma_x + sigma_y
+    weight_sigma: float = sigma_x + sigma_y
 
-    manhattan_distance = delta_x + delta_y
-    manhattan_distance_ratio = manhattan_distance / MANHATTAN_DISTANCE_MAX
-    euclidean_distance = np.sqrt((delta_x ** 2) + (delta_y)** 2)
-    diagonal_distance = max(delta_x, delta_y)
+    diagonal_distance: int = max(delta_x, delta_y)
+    diagonal_distance_ratio: int = diagonal_distance / 432
 
-    lat1 = latitude_data[y1, x1]
-    lat2 = latitude_data[y2, x2]
+    weighting_exponent: float = WEIGHT_BASE + weight_sigma
+   
+    lat1 = latitude_data[node]
+    lat2 = latitude_data[goal]
 
-    lon1 = longitude_data[y1, x1]
-    lon2 = longitude_data[y2, x2]
+    lon1 = longitude_data[node]
+    lon2 = longitude_data[goal]
 
     great_circle_distance = great_circle(lat1, lon1, lat2, lon2)
 
-    # diagonal_distance = max(abs(x2 - x1), abs(y2 - y1))
-
-    diagonal_distance_ratio = diagonal_distance / 432
-
-    # diagonal_ratio = diagonal_distance / 432
-
-    # weighting_exponent = 1.0 + (0.21 * diagonal_ratio)
-
-    # x_distance = abs(x2 - x1)
-    # y_distance = abs(y2 - y1)
-    # distance_ratio = (x_distance + y_distance) / (2 * 432)
-
-    # weighting_exponent = 1.0 + (0.005 * manhattan_distance_ratio)
-    weighting_exponent = WEIGHT_BASE + weight_sigma
-  
-    # estimated_units = great_circle(lat1, lon1, lat2, lon2)
-    # estimated_units = max(x_distance, y_distance)
-    # estimated_units = x_distance + y_distance
-    # estimated_units = np.sqrt((x_distance ** 2) + (y_distance ** 2))
-    # p1_past_passage = (lon1 >= 100.0 or lon1 <= -100.0) and lat1 >= 60.0
-    # p2_past_passage = (lon2 >= 100.0 or lon2 <= -100.0) and lat2 >= 60.0
-    # passage_case1 = p1_past_passage and not p2_past_passage
-    # passage_case2 = not p1_past_passage and p2_past_passage
-
-    # passage_case = passage_case1 or passage_case2
-
-    # TODO: Move this constant
-    # UNIT_UPPER_LIMIT = 600.0
-
-    # distant_case = estimated_units > UNIT_UPPER_LIMIT
-    # if distant_case or passage_case:
-    #     estimated_distance = utils.unit_distance * estimated_units
-    # estimated_units = abs(x1 - x2) + abs(y1 - y2)
-    # else:
-    estimated_distance = great_circle(lat1, lon1, lat2, lon2)
-    # estimated_distance = euclidean_distance * utils.unit_distance
-    weighted_distance = np.power(estimated_distance, weighting_exponent)
-    # estimated_distance = utils.unit_distance * estimated_units
-    # estimated_distance = (utils.unit_distance / 25.0) * estimated_units
-    print('dist')
-    print(estimated_distance)
-    print('weighted')
-    print(weighted_distance)
+    weighted_distance = np.power(great_circle_distance, weighting_exponent)
+    if utils.verbose_mode:
+        print('dist')
+        print(great_circle_distance)
+        print('weighted')
+        print(weighted_distance)
     estimated_cost = ship.unit_cost * weighted_distance
-    # estimated_cost = (ship.unit_cost * 25.0) * np.float_power(estimated_units, 1.5)
-    # print('est cost')
-    # print(estimated_cost)
     return estimated_cost
-    # estimated_units = abs(x1 - x2) + abs(y1 - y2) 
-    # estimated_distance = great_circle(lat1, lon1, lat2, lon2)
-    # estimated_distance = utils.unit_distance * max(abs(x1 - x2), abs(y1 - y2))
-    # estimated_cost = ship.COST_PER_UNIT * estimated_units
-    # estimated_distance = np.sqrt((abs(x1 - x2) ** 2) + (abs(y1 - y2) ** 2))
-    # estimated_distance = np.sqrt((abs(lat1 - lat2) ** 2) + (abs(lon1 - lon2) ** 2))
-    # return estimated_distance * 25000.
-    # weight = heuristic_unit_rate * (estimated_distance / 25000.0)
-    # weight = heuristic_unit_rate * estimated_distance
-    # return heuristic_unit_rate * (estimated_distance / 25000.0)
-    # return estimated_distance * (1.0 / (np.e ** mean_ice_thickness)) 
-    # return estimated_distance
-    # return ship.get_costs(HEURISTIC_FUEL, ship.v_max, estimated_units * utils.unit_distance, 0.0)
-    return estimated_cost
-    # return ship.get_costs(fuel_type, ship.v_limit(0.0), estimated_distance, 0.0)
-    # return 25000.0 * estimated_distance
 
-    # return ship.get_costs(fuel_type, ship.v_limit(HEURISTIC_THICKNESS), estimated_distance, HEURISTIC_THICKNESS) 
-
-def reconstruct_path(current_node,came_from): 
-    '''
-    returns reconstructed path as a list of nodes from start node to goal node
+def reconstruct_path(
+        current_node: Node,
+        came_from: NodeMap
+        ) -> NodeSet: 
+    ''' Returns reconstructed path as a list of nodes from start node to goal node
     by iterating over visited nodes from the came_from set
-        '''
+
+    :param current_node: tuple[int, int] - The node to start building from
+    :param came_from: dict[int, int] - The rest of the nodes to build from
+    :return: list[tuple[int, int]] The reconstructed path
+    '''
     if utils.verbose_mode:
         print('\tReconstructing path...')
     path = [current_node]  # initializing with current_node
@@ -258,15 +277,22 @@ def reconstruct_path(current_node,came_from):
     return path
 
 from collections import defaultdict
-
 from heapq import heapify, heappush, heappop, nsmallest
-# max_cons_weight = 1.0
-# max_emis_weight = 25.0
-def A_star_search_algorithm(start_coordinate, end_coordinate, fuel, ship):
-    '''
-    returns most optimal path between start_coordinate and end_coordinate
+def A_star_search_algorithm(
+        start_coordinate: Coordinate, 
+        end_coordinate: Coordinate, 
+        ship: Type[Ship],
+        fuel: Type[Fuel] 
+        ) -> tuple[list[tuple[int]], float, bool]:
+    ''' Returns most optimal path between start_coordinate and end_coordinate
     path is chosen based on cost
-        '''
+
+    :param start_coordinate: tuple[float, float] -
+    :param end_coordinate: tuple[float, float] -
+    :param ship: Type[Ship] - 
+    :param fuel: Type[Fuel] -
+    :returns: tuple[list[Node], float, bool]
+    '''
     print('\tStarting A*... (this may in some cases take a while)')
 
     # There may be better values to choose here
@@ -278,46 +304,50 @@ def A_star_search_algorithm(start_coordinate, end_coordinate, fuel, ship):
 
     # Set to actual fuel in use
     ship.set_fuel(fuel)
-    # ship.set_target_velocity(1.00)
-    # ship.set_unit_cost()
 
-    # unit_rate = get_heuristic_unit_rate(ship, trip_fuel)
-
-    start_y, start_x = find_closest_index(start_coordinate) 
-    goal_y, goal_x = find_closest_index(end_coordinate)
+    # FLIPPED
+    # Get node indices
+    # start_y, start_x = find_closest_index(start_coordinate) 
+    # goal_y, goal_x = find_closest_index(end_coordinate)
 
     # y_res, x_res = 1, 1
     # start = (x_res * start_x, y_res * start_y)
     # goal = (x_res * goal_x, y_res * goal_y)
-    start = (start_x, start_y)
-    goal = (goal_x, goal_y)
+    # Reverse, function internals demand it somehow
+    # FLIPPED
+    # start: Node = (start_x, start_y)
+    # goal: Node = (goal_x, goal_y)
+    # Get nodes
+    start: Node = find_closest_index(start_coordinate)
+    goal: Node = find_closest_index(end_coordinate)
 
 
     # defining scoreing
-    g_score = {}  # cost from start node to each node
-    f_score = {}
+    g_score: ScoreSet = {}  # cost from start node to each node
+    f_score: ScoreSet = {}
     # Init empty map with infinity g_score
-    y_bound = np.shape(data.ice_values)[0]
-    x_bound = np.shape(data.ice_values)[1]
+    y_bound: int = np.shape(data.ice_values)[0]
+    x_bound: int = np.shape(data.ice_values)[1]
     for y in np.arange(0, y_bound):
         for x in np.arange(0, x_bound):
-            g_score[x, y] = float('inf')
-            f_score[x, y] = float('inf')
+            # FLIPPED
+            g_score[y, x] = float('inf')
+            f_score[y, x] = float('inf')
 
     # Estimate of cost to reach the current node
     g_score[start] = 0.
     # Estimate of cost from start node to goal node for each node
-    f_score[start] = g_score[start] + heuristic(start, goal, ship, fuel)
+    f_score[start] = g_score[start] + heuristic(start, goal, ship)
     # initializing sets for exploring and disregarding nodes
-    came_from = {}  # will hold parent nodes, empty on init
+    came_from: NodeMap = {}  # will hold parent nodes, empty on init
 
     # The closed_set will hold previously explored nodes
-    closed_set = []
+    closed_set: NodeSet = []
 
     # The open set (heap) will hold currently explorable nodes
     # Using binheap, since the smallest element will always
     # be the first, drastically speeding up the search
-    open_heap = []
+    open_heap: Heap = []
     heapify(open_heap)
     heappush(open_heap, (f_score[start], start))
 
@@ -325,23 +355,29 @@ def A_star_search_algorithm(start_coordinate, end_coordinate, fuel, ship):
     # iterating over available nodes
     while open_heap:
         # Get lowest f_score element
-        current_f_score, current_node = heappop(open_heap)
+        elem: HeapItem = heappop(open_heap)
+        current_node: Node = elem[1]
         closed_set.append(current_node)
 
         # If at goal, return the path used
         if current_node == goal:
             print('\tSearch successful!\n')
-            return reconstruct_path(current_node, came_from), current_f_score, True
+            path: NodeSet = reconstruct_path(current_node, came_from)
+            final_score: Score = elem[0]
+            result: SearchResult = path, final_score, True
+            return result
 
         # iterating through current node's neighbors
         for dx, dy in neighbors:
             # x, y = current_node
-            neighbor = (current_node[0] + dx, current_node[1] + dy)
+            neighbor_y: int = current_node[0] + dy
+            neighbor_x: int = current_node[1] + dx
+            neighbor: Node = (neighbor_y, neighbor_x)
             # If neighbor is inside chosen bounds
-            if 0 <= neighbor[0] < x_bound and 0 <= neighbor[1] < y_bound:
+            if 0 <= neighbor_x < x_bound and 0 <= neighbor_y < y_bound:
                 # Proper control flow requires this statement to fail,
                 # but the previous to pass
-                if np.isnan(data.ice_values[neighbor[1], neighbor[0]]):
+                if np.isnan(data.ice_values[neighbor]):
                     # Indeterminate data, proceed to next iteration
                     continue
                 # if neighbor is in closed set, due to our heuristic,
@@ -358,7 +394,7 @@ def A_star_search_algorithm(start_coordinate, end_coordinate, fuel, ship):
                 continue
 
             # Potential g_score of neighbor
-            tentative_g_score = g_score[current_node] + cost(current_node, neighbor, ship, fuel)  # changes if a smaller cost path is found
+            tentative_g_score: Score = g_score[current_node] + cost(current_node, neighbor, ship)  # changes if a smaller cost path is found
 
             # checks if the current path to neighbor is better than previous (or none)
             if tentative_g_score < g_score[neighbor]:
@@ -369,7 +405,7 @@ def A_star_search_algorithm(start_coordinate, end_coordinate, fuel, ship):
                 g_score[neighbor] = tentative_g_score 
 
                 # total cost from start node to goal node via this neighbor
-                f_score[neighbor] = g_score[neighbor] + heuristic(neighbor, goal, ship, fuel)
+                f_score[neighbor] = g_score[neighbor] + heuristic(neighbor, goal, ship)
 
                 # checking if neighbor has been explored
                 # if neighbor not in [i[1] for i in open_heap]:
@@ -378,13 +414,12 @@ def A_star_search_algorithm(start_coordinate, end_coordinate, fuel, ship):
 
     # if no path has been found 
     print('\tSearch failed!\n')
-    # path = reconstruct_path(current_node, came_from)
+    path: NodeSet = reconstruct_path(current_node, came_from)
+    final_score: Score = elem[0]
+    result: SearchResult = path, final_score, False
+    return result
 
-    # path.append(end_coordinate)
-
-    return reconstruct_path(current_node, came_from), current_f_score, False
-
-def plot_path(path, map=None):
+def plot_path(path: NodeSet, map=None):
     if map == None:
         map = data.init_map()
     if utils.verbose_mode:
@@ -435,11 +470,49 @@ def run_search(start_coordinate, end_coordinate):
 # TESTING SECTION
 
 # defining start and end coordinates (lat,lon)
-start_coordinate = (66.898,-162.596)
-end_coordinate = (68.958, 33.082)
+start_coordinate: Coordinate = (66.898, -162.596)
+end_coordinate: Coordinate = (68.958, 33.082)
 
 # import distance_correction as dist_corr
 
+class Port():
+    def __init__(self, name: str, position: Coordinate):
+        self.name: str = name
+        self.position: Coordinate = position
+    def __str__(self) -> str:
+        return f"{self.name}{self.position}"
+class Mongstad(Port):
+    def __init__(self):
+        super().__init__('Mongstad', (60.810, 5.032))
+class Mizushima(Port):
+    def __init__(self):
+        super().__init__('Mizushima', (34.504, 133.714))
+class Kotzebue(Port):
+    def __init__(self):
+        super().__init__('Kotzebue', (66.898, -162.596))
+class Murmansk(Port):
+    def __init__(self):
+        super().__init__('Murmansk', (68.958, 33.082))
+class Reykjavik(Port):
+    def __init__(self):
+        super().__init__('Reykjavik', (64.963, 19.103))
+class Tasiilap(Port):
+    def __init__(self):
+        super().__init__('Tasiilap', (65.604, -37.707))
+class Route():
+    def __init__(self, start: Type[Port], goal: Type[Port]):
+        self.start: Type[Port] = start
+        self.goal: Type[Port] = goal
+    def __str__(self) -> str:
+        return f"Route - {self.start} - {self.goal}"
+
+# mongstad: Port = Port('Mongstad', (60.810, 5.032))
+# mizushima: Port = Port('Mizushima', (34.504, 133.714))
+test_route_1: Route = Route(Mongstad(), Mizushima())
+# kotzebue: Port = Port('Kotzebue', (66.898, -162.596))
+# murmansk: Port = Port('Murmansk', (68.958, 33.082))
+test_route_2: Route = Route(Kotzebue(), Murmansk())
+test_route_3: Route = Route(Tasiilap(), Mongstad())
 MONGSTAD = ('Mongstad', (60.810, 5.032))
 MIZUSHIMA = ('Mizushima', (34.504, 133.714))
 KOTZEBUE = ('Kotzebue', (66.898, -162.596))
@@ -454,14 +527,26 @@ coordinates = [
     [TASIILAP, MURMANSK]
 ]
 
+def plot_route(route: Route, fuel: Type[Fuel], ship: Type[Ship]):
+    result: SearchResult = A_star_search_algorithm(route.start.position, route.goal.position, ship, fuel)
+
+    path: NodeSet = result[0]
+    plot_path(path, data.init_map())
+
+    score: Score = result[1]
+    path_label: str = f"{route} - {ship.name} - {fuel.name} - {score}"
+    data.save_coord_map(path_label)
+    print(utils.separator)
+
 def plot_between(start_place, end_place, fuel, ship):
     path, score, search_successful = A_star_search_algorithm(start_place[1], end_place[1], fuel, ship)
     plot_path(path, data.init_map())
     data.save_coord_map(start_place[0] + ' to ' + end_place[0] + '(' + str(score) + ', ' + fuel.name + ')')
 def test():
     for fuel in fuel_class.fuel_list:
-        plot_between(MURMANSK, KOTZEBUE, fuel, ship_class.ship_list[0])
-        plot_between(MONGSTAD, MIZUSHIMA, fuel, ship_class.ship_list[0])
+        plot_route(test_route_1, fuel, ship_class.Prizna())
+        plot_route(test_route_2, fuel, ship_class.Prizna())
+        plot_route(test_route_3, fuel, ship_class.Prizna())
 def profile():
     import cProfile, pstats
     profiler = cProfile.Profile()
