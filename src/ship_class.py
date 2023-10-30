@@ -176,7 +176,8 @@ class Ship:
                 ice_resistance_factor = ice_factor * adjusted_thickness
                 resistive_power = ice_resistance_factor * consumed_power
                 return resistive_power
-        # In all other cases, 0.0 returned
+            else:
+                return float('inf')
         return 0.0
 
     def get_fuel_consumption(self, thickness: float, distance=utils.unit_distance) -> float:
