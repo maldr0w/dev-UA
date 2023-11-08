@@ -595,10 +595,10 @@ class PortBaseTest(unittest.TestCase):
         if self.port != None:
             self.assertIsInstance(self.port.coordinate, Coordinate)
 
-@define
+# @define
 class Mongstad(Port):
-    name: str = 'MONG'
-    coordinate = Coordinate(lat = 60.810, lon = 5.032)
+    # name: str = 'MONG'
+    # coordinate = Coordinate(lat = 60.810, lon = 5.032)
     def __init__(self):
         super().__init__(Mongstad.name, Coordinate(lat = 60.810, lon = 5.032))
 
@@ -606,10 +606,10 @@ class MongstadTest(PortBaseTest):
     def setUp(self):
         self.port = Mongstad()
 
-@define
+# @define
 class Mizushima(Port):
-    name: str = 'MIZU'
-    coordinate = Coordinate(lat = 34.504, lon = 133.714)
+    # name: str = 'MIZU'
+    # coordinate = Coordinate(lat = 34.504, lon = 133.714)
     def __init__(self):
         super().__init__(Mizushima.name, Coordinate(lat = 34.504, lon = 133.714))
 
@@ -617,10 +617,10 @@ class MizushimaTest(PortBaseTest):
     def setUp(self):
         self.port = Mizushima()
 
-@define
+# @define
 class Kotzebue(Port):
-    name: str = 'KOTZ'
-    coordinate = Coordinate(lat = 66.898, lon = -162.596)
+    # name: str = 'KOTZ'
+    # coordinate = Coordinate(lat = 66.898, lon = -162.596)
     def __init__(self):
         super().__init__(Kotzebue.name, Coordinate(lat = 66.898, lon = -162.596))
 
