@@ -572,7 +572,7 @@ class Port:
     #     # lat, lon = position
     #     # self.coord = Coord(lat, lon)
     def __str__(self) -> str:
-        return f"{self.name} {self.position}"
+        return f"{self.name} {self.coordinate}"
     def get_position(self) -> Coordinate:
         return self.coordinate
 
