@@ -599,6 +599,8 @@ class PortBaseTest(unittest.TestCase):
 class Mongstad(Port):
     name: str = 'MONG'
     coordinate = Coordinate(lat = 60.810, lon = 5.032)
+    def __init__(self):
+        super().__init__(Mongstad.name, Coordinate(lat = 60.810, lon = 5.032))
 
 class MongstadTest(PortBaseTest):
     def setUp(self):
@@ -608,6 +610,8 @@ class MongstadTest(PortBaseTest):
 class Mizushima(Port):
     name: str = 'MIZU'
     coordinate = Coordinate(lat = 34.504, lon = 133.714)
+    def __init__(self):
+        super().__init__(Mizushima.name, Coordinate(lat = 34.504, lon = 133.714))
 
 class MizushimaTest(PortBaseTest):
     def setUp(self):
@@ -617,6 +621,8 @@ class MizushimaTest(PortBaseTest):
 class Kotzebue(Port):
     name: str = 'KOTZ'
     coordinate = Coordinate(lat = 66.898, lon = -162.596)
+    def __init__(self):
+        super().__init__(Kotzebue.name, Coordinate(lat = 66.898, lon = -162.596))
 
 class KotzebueTest(PortBaseTest):
     def setUp(self):
@@ -675,7 +681,8 @@ coordinates = [
 ]
 
 def plot_route(route: Route, fuel: Type[Fuel], ship: Type[Ship]):
-    result: SearchResult = A_star_search_algorithm(route.start.position, route.goal.position, ship, fuel)
+    print(route.goal.coordinate)
+    result: SearchResult = A_star_search_algorithm(route.start.coordinate, route.goal.coordinate, ship, fuel)
 
     path: NodeSet = result[0]
     plot_path(path, data.init_map())
