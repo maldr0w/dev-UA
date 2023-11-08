@@ -600,7 +600,7 @@ class Mongstad(Port):
     # name: str = 'MONG'
     # coordinate = Coordinate(lat = 60.810, lon = 5.032)
     def __init__(self):
-        super().__init__(Mongstad.name, Coordinate(lat = 60.810, lon = 5.032))
+        super().__init__('MONG', Coordinate(lat = 60.810, lon = 5.032))
 
 class MongstadTest(PortBaseTest):
     def setUp(self):
@@ -611,7 +611,7 @@ class Mizushima(Port):
     # name: str = 'MIZU'
     # coordinate = Coordinate(lat = 34.504, lon = 133.714)
     def __init__(self):
-        super().__init__(Mizushima.name, Coordinate(lat = 34.504, lon = 133.714))
+        super().__init__('MIZU', Coordinate(lat = 34.504, lon = 133.714))
 
 class MizushimaTest(PortBaseTest):
     def setUp(self):
@@ -622,7 +622,7 @@ class Kotzebue(Port):
     # name: str = 'KOTZ'
     # coordinate = Coordinate(lat = 66.898, lon = -162.596)
     def __init__(self):
-        super().__init__(Kotzebue.name, Coordinate(lat = 66.898, lon = -162.596))
+        super().__init__('KOTZ', Coordinate(lat = 66.898, lon = -162.596))
 
 class KotzebueTest(PortBaseTest):
     def setUp(self):
