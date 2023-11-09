@@ -432,8 +432,8 @@ def A_star_search_algorithm(start_coordinate: Coordinate, end_coordinate: Coordi
 
     neighbors = [(0, 1), (0, -1), (1, 0), (1, 1), (1, -1), (-1, 0), (-1, -1), (-1, 1)]
     # iterating over available nodes
+    print('Please wait patiently Hadi...\nComputers take time sometimes.')
     while open_heap:
-        print('.', end='')
         # Get lowest f_score element
         elem: tuple[float, Node] = heappop(open_heap)
         current_node: Node = elem[1]
