@@ -2,7 +2,9 @@ def write_csv_data(csv_array):
     try:
         with open('democsv_.csv', 'a') as f:
             for data_point in csv_array:
-                x0, x1 = data_point.split(',')
+                x0_, x1_ = data_point.split(',')
+                x0 = x0_.replace('.', ',')
+                x1 = x1_.replace('.', ',')
                 f.write(f'\"{x0}\",\"{x1}\"\n')
 
             f.write('\n')
