@@ -292,20 +292,20 @@ def heuristic(node: Node, goal: Node, ship: Type[Ship]) -> Score:
     # diagonal_distance_ratio: int = diagonal_distance / 432
 
     # weighting_exponent: float = WEIGHT_BASE - weight_sigma
-   
+
     estimated_distance = node.great_circle_to(goal)
-    print('dist')
-    print(estimated_distance)
+    # print('dist')
+    # print(estimated_distance)
 
     bias = node.bias(goal) / 10.0
     weighted_distance = (1.0 + bias) * estimated_distance
     print('weighted')
     print(weighted_distance)
 
-    delta_distance = abs(weighted_distance - estimated_distance)
-    percent_delta = (weighted_distance / estimated_distance) - 1.0
-    print('delta')
-    print(str(weighted_distance) + ' ' + str(percent_delta))
+    # delta_distance = abs(weighted_distance - estimated_distance)
+    # percent_delta = (weighted_distance / estimated_distance) - 1.0
+    # print('delta')
+    # print(str(weighted_distance) + ' ' + str(percent_delta))
     estimated_cost = ship.unit_cost * weighted_distance
     return estimated_cost
 
@@ -433,6 +433,7 @@ def A_star_search_algorithm(start_coordinate: Coordinate, end_coordinate: Coordi
     neighbors = [(0, 1), (0, -1), (1, 0), (1, 1), (1, -1), (-1, 0), (-1, -1), (-1, 1)]
     # iterating over available nodes
     while open_heap:
+        print('.', end='')
         # Get lowest f_score element
         elem: tuple[float, Node] = heappop(open_heap)
         current_node: Node = elem[1]
