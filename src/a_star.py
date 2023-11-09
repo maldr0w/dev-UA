@@ -526,7 +526,8 @@ def run_search(start_coordinate, end_coordinate):
     :param start_coordinate: List[float] - Start coordinate as [lon, lat]
     :param end_coordinate: List[float] - End coordinate as [lon, lat]
     '''
-
+    start_coordinate = Coordinate(start_coordinate[0], start_coordinate[1])
+    end_coordinate = Coordinate(end_coordinate[0], end_coordinate[1])
     path, score, search_successful = A_star_search_algorithm(start_coordinate, end_coordinate, ship_class.ship_list[0], fuel_class.fuel_list[0])
     if path != None and search_successful:
         plot_path(path)
