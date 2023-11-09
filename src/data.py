@@ -117,10 +117,10 @@ def init_map():
 
 def save_coord_map(name):
     plt.title(str(name) + " map")
-    plt.show()
+    # plt.show()
     if utils.verbose_mode:
         print("\tSaving figure...")
-    plt.savefig('images/' + str(name) + '.png')
+    plt.savefig(str(name) + '.png')
     if utils.verbose_mode:
         print("\tFinished.")
     plt.close()
