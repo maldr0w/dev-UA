@@ -299,8 +299,8 @@ def heuristic(node: Node, goal: Node, ship: Type[Ship]) -> Score:
 
     bias = node.bias(goal) / 10.0
     weighted_distance = (1.0 + bias) * estimated_distance
-    print('weighted')
-    print(weighted_distance)
+    # print('weighted')
+    # print(weighted_distance)
 
     # delta_distance = abs(weighted_distance - estimated_distance)
     # percent_delta = (weighted_distance / estimated_distance) - 1.0
@@ -325,13 +325,14 @@ def reconstruct_path(
     path = [current_node]  # initializing with current_node
     while current_node in came_from:  # iterating through came from set
         current_node = came_from[current_node]  # assign current node to the node it came from
-        path.insert(0,current_node)  # insert current node at the front of the path list
+        path.insert(0, current_node)  # insert current node at the front of the path list
     if utils.verbose_mode:
         print('\tFinished.\n')
     return path
 
-from collections import defaultdict
-from heapq import heapify, heappush, heappop, nsmallest
+
+from heapq import heapify, heappush, heappop
+
 X_BOUND = 432
 Y_BOUND = 432
 coordinate_set: dict[tuple[int, int], Coordinate] = {}
@@ -432,7 +433,9 @@ def A_star_search_algorithm(start_coordinate: Coordinate, end_coordinate: Coordi
 
     neighbors = [(0, 1), (0, -1), (1, 0), (1, 1), (1, -1), (-1, 0), (-1, -1), (-1, 1)]
     # iterating over available nodes
-    print('Please wait patiently Hadi...\nComputers take time sometimes.')
+    for i in np.arange(80):
+        print(' ')
+    print('\t\t\tPlease wait patiently Hadi...\n\n\t\t\tComputers take time sometimes.')
     while open_heap:
         # Get lowest f_score element
         elem: tuple[float, Node] = heappop(open_heap)
@@ -512,11 +515,13 @@ def plot_path(path: list[Node], map=None):
         map = data.init_map()
     if utils.verbose_mode:
         print('\tPlotting path...')
-    [data.plot_coord(node.coord.lon, node.coord.lat, map=map)
-        for node in path 
+    csv_data = [data.plot_coord(node.coord.lon, node.coord.lat, map=map)
+        for node in path
         # [(node.coord.lon, node.coord.lat) for node in path]
     ]
     print('\tFinished.\n')
+    print(np.shape(csv_data))
+    return csv_data
 
 
 def run_search(start_coordinate, end_coordinate):
@@ -531,9 +536,21 @@ def run_search(start_coordinate, end_coordinate):
     end_coordinate = Coordinate(end_coordinate[0], end_coordinate[1])
     path, score, search_successful = A_star_search_algorithm(start_coordinate, end_coordinate, ship_class.ship_list[0], fuel_class.fuel_list[0])
     if path != None and search_successful:
-        plot_path(path)
+        csv_data = plot_path(path)
         data.save_coord_map(str(start_coordinate) + '_' + str(end_coordinate) + '_' + str(score) + '€')
         print ('New path available in images directory!')
+        # csv_string = ""
+        # for data_point in csv_data:
+            # print(data_point)
+            # csv_string = csv_string + '\n' + data_point
+        # print(csv_string)
+        import csv_print_
+        csv_print_.write_csv_data(csv_data)
+        # csv_path = 'democsv.csv'
+        # with open(csv_path, 'a') as f:
+        #     for csv_data_point in csv_data:
+        #         f.write(csv_data_point)
+        #     f.close()
     else:
         map = data.init_map()
 
@@ -553,7 +570,6 @@ def run_search(start_coordinate, end_coordinate):
         data.save_coord_map(str(start_coordinate) + '_' + str(end_coordinate) + '_failure_' + str(score) + '€')
 
         print('Check images directory to see details, there will be a new map there, containing some points for debugging.\nThe large dots indicate start/end coordinates, the small ones indicate the path attempted.')
-
 
 
 # TESTING SECTION
@@ -687,8 +703,9 @@ def plot_route(route: Route, fuel: Type[Fuel], ship: Type[Ship]):
     result: SearchResult = A_star_search_algorithm(route.start.coordinate, route.goal.coordinate, ship, fuel)
 
     path: NodeSet = result[0]
-    plot_path(path, data.init_map())
-
+    csv_arr = plot_path(path, data.init_map())
+    import csv_print_
+    csv_print_.write_csv_data(csv_arr)
     score: Score = result[1]
     path_label: str = f"{ship.name} - {fuel.name} - {route} - {score}"
     data.save_coord_map(path_label)

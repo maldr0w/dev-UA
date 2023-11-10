@@ -53,6 +53,9 @@ def plot_coord(lon: float, lat: float, lon_west=False, c='r', m=',', map=None):
         lon = 360. - lon
     x, y = map(lon, lat)
     map.plot(x, y, marker=m, color=c)
+    csv_something = f'{str(lon)},{str(lat)}'
+    print(csv_something)
+    return csv_something
 
 # Access icedata (for some reason, there is a time dimension)
 TIME = 0
