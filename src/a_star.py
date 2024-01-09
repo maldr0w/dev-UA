@@ -2,7 +2,7 @@ import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
 import utils
-from typing import List, Type, Tuple, TypeAlias, NamedTuple
+from typing import List, Type, Tuple, TypeAlias, NamedTuple, Optional
 
 
 utils.print_entrypoint(__name__, __file__)
@@ -524,17 +524,41 @@ def plot_path(path: list[Node], map=None):
     return csv_data
 
 
-def run_search(start_coordinate, end_coordinate):
+def run_search(start_coordinate, end_coordinate, ship_selected: Optional[str] = None, fuel_selected: Optional[str] = None):
     '''
     Runs A* on the provided coordinates, and attempts to plot the path.
     In case of a failed search, only the start-point and end-point will be
     visible in the plot (for debugging purposes etc.)
     :param start_coordinate: List[float] - Start coordinate as [lon, lat]
     :param end_coordinate: List[float] - End coordinate as [lon, lat]
+    :param ship_selected: Optional[str] - Ship to use (all if None specified)
+    :param fuel_selected: Optional[str] - Fuel type to use (all if None specified)
     '''
     start_coordinate = Coordinate(start_coordinate[0], start_coordinate[1])
     end_coordinate = Coordinate(end_coordinate[0], end_coordinate[1])
-    path, score, search_successful = A_star_search_algorithm(start_coordinate, end_coordinate, ship_class.ship_list[0], fuel_class.fuel_list[0])
+    match [ship_selected, fuel_selected]:
+        case [None, None]:
+            for selected_ship in ship_class.ship_list:
+                for selected_fuel in fuel_class.fuel_list:
+                    path, score, search_successful = A_star_search_algorithm(start_coordinate, end_coordinate, selected_ship, fuel_selected)
+                    document_search(path, score, search_successful)
+        case [ship_name, None]:
+            selected_ship = ship_class.__from_str__(ship_name)
+            for selected_fuel in fuel_class.fuel_list:
+                path, score, search_successful = A_star_search_algorithm(start_coordinate, end_coordinate, selected_ship, fuel_selected)
+                document_search(path, search_successful)
+        case [None, fuel_name]:
+            selected_fuel = fuel_class.__from_str__(fuel_name)
+            for selected_ship in ship_class.ship_list:
+                path, score, search_successful = A_star_search_algorithm(start_coordinate, end_coordinate, selected_ship, selected_fuel)
+                document_search(path, score, search_successful)
+        case [ship_name, fuel_name]:
+            selected_ship = ship_class.__from_str__(ship_name)
+            selected_fuel = fuel_class.__from_str__(fuel_name)
+            path, score, search_successful = A_star_search_algorithm(start_coordinate, end_coordinate, selected_ship, selected_fuel)
+            document_search(path, score, search_successful)
+import csv_print_
+def document_search(path, score, search_successful):
     if path != None and search_successful:
         csv_data = plot_path(path)
         data.save_coord_map(str(start_coordinate) + '_' + str(end_coordinate) + '_' + str(score) + '€')
@@ -544,7 +568,6 @@ def run_search(start_coordinate, end_coordinate):
             # print(data_point)
             # csv_string = csv_string + '\n' + data_point
         # print(csv_string)
-        import csv_print_
         csv_print_.write_csv_data(csv_data)
         # csv_path = 'democsv.csv'
         # with open(csv_path, 'a') as f:

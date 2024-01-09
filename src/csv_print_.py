@@ -9,7 +9,7 @@ def write_csv_data(csv_array):
 
             f.write('\n')
             f.close()
-            print('Done writing to CSV file\n(Change file name or manually clear the file between runs to "freshen up"')
+            print('Done writing to CSV file\n(Change file name or manually clear the file between runs to "freshen up")')
     except OSError as err:
         print(err)
     except ValueError as err:
