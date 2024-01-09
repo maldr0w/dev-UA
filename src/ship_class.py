@@ -36,7 +36,6 @@ class Ship:
 
     def __str__(self):
         return f"{self.name.upper()}\n\tMain engine: {self.main_eng_pow} kW\n\tAuxiliary engine: {self.aux_eng_pow}\n\tDesign speed: {self.design_speed}\n"
-
     def set_fuel(self, fuel: Type[Fuel]):
         '''Set the fuel the ship will use
         :param fuel: Type[Fuel] - The fuel in question
@@ -336,4 +335,14 @@ ship_list = [
     # Ship("Petar Hektorovic", 3600.0, 1944.0, 15.75)
     PetarHektorovic()
 ]
+def __from_str__(ship_name: str) -> Type[Ship]:
+    match ship_name:
+        case 'prizna':
+            return ship_list[0]
+        case 'kornati':
+            return ship_list[1]
+        case 'petar':
+            return ship_list[2]
+        case _:
+            raise ValueError(f'{ship_name} not a recognized ship!')
 utils.print_exit(__name__, __file__)

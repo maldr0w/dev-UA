@@ -356,5 +356,20 @@ fuel_list = [
     Hydrogen(),
     B20(),
 ]
-
+def __from_str__(fuel_name: str) -> Type[Fuel]:
+    match fuel_name:
+        case 'diesel':
+            return fuel_list[0]
+        case 'lng':
+            return fuel_list[1]
+        case 'methanol':
+            return fuel_list[2]
+        case 'dme':
+            return fuel_list[3]
+        case 'hydrogen':
+            return fuel_list[4]
+        case 'b20':
+            return fuel_list[5]
+        case _:
+            raise ValueError(f'{fuel_name} is not a recognized fuel name!')
 HEURISTIC_FUEL_TYPE = Methanol()
