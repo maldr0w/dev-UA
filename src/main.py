@@ -75,9 +75,9 @@ def main(argv):
     if defined_options['start'] != None and defined_options['end'] != None:
         import a_star
         a_star.run_search(start, end, defined_options['ship'], defined_options['fuel'])
-    elif thickness != None:
+    elif defined_options['thickness'] != None:
         import graph_creation
-        graph_creation.create_graphs(thickness)
+        graph_creation.create_graphs(defined_options['thickness'])
     print_help_and_exit()
 
 def print_help_and_exit():
