@@ -78,7 +78,8 @@ def main(argv):
     elif defined_options['thickness'] != None:
         import graph_creation
         graph_creation.create_graphs(defined_options['thickness'])
-    print_help_and_exit()
+    else:
+        print_help_and_exit()
 
 def print_help_and_exit():
     print_help()
