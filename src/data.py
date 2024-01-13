@@ -123,7 +123,7 @@ def save_coord_map(name):
     # plt.show()
     if utils.verbose_mode:
         print("\tSaving figure...")
-    plt.savefig(str(name) + '.png')
+    plt.savefig("images/" + str(name) + '.png')
     if utils.verbose_mode:
         print("\tFinished.")
     plt.close()

@@ -43,7 +43,7 @@ class Coordinate:
     # def __hash__(self):
     #     return hash((self.lat, self.lon))
     def __str__(self):
-        return f"(Lat: {self.lat}, Lon: {self.lon})"
+        return f"(Lat{self.lat}_Lon{self.lon})"
     def great_circle(self, other: Type['__class__']) -> float:
         lat1, lon1, lat2, lon2 = np.deg2rad([self.lat, self.lon, other.lat, other.lon])
         latd = lat2 - lat1
@@ -561,14 +561,15 @@ import csv_print_
 def document_search(start_coordinate: Coordinate, end_coordinate: Coordinate, path, score, search_successful):
     if path != None and search_successful:
         csv_data = plot_path(path)
-        data.save_coord_map(str(start_coordinate) + '_' + str(end_coordinate) + '_' + str(score) + '€')
-        print ('New path available in images directory!')
+        search_name = str(start_coordinate) + '_' + str(end_coordinate) + '_' + str(score) + '€'
+        data.save_coord_map(search_name)
+        print('New path available in images directory!')
         # csv_string = ""
         # for data_point in csv_data:
             # print(data_point)
             # csv_string = csv_string + '\n' + data_point
         # print(csv_string)
-        csv_print_.write_csv_data(csv_data)
+        csv_print_.write_csv_data(search_name, csv_data)
         # csv_path = 'democsv.csv'
         # with open(csv_path, 'a') as f:
         #     for csv_data_point in csv_data:
