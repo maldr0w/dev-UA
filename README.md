@@ -17,6 +17,22 @@ or
 python3 main.py -s 60.000,68.000 -e 66.898,-162.596
 ```
 
+Now by only specifying a start and end, the program will automatically run through all possible ship and fuel combinations.
+
+If you would like to specify which fuel or ship to run, simply run something like the following:
+
+```
+python3 main.py --start=69.376,33.585 --end=66.888,-162.650 --fuel=Diesel --ship=Prizna
+```
+
+The possible values for fuel are Diesel, LNG, Methanol, DME, Hydrogen, and B20
+
+The possible values for ships are Prizna, Kornati, and Petar
+
+Any unspecified parameter will result in a run where the specified parameter is used, and the possible values for the unspecified parameter will be iterated over
+
+This means, for example, if the above line is run, but `--fuel=Diesel` is omitted, the ship Prizna will be used, and will a search will be run 6 times, once for each fuel type
+
 In case you would like to create graphs representing the data of the vessel, simply write
 ```
 python3 main.py --graph=0.0
