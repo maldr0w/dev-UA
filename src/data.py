@@ -25,7 +25,8 @@ import xarray as xr
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import utils
-
+from pathlib import Path
+IMAGES_PATH = Path("images/")
 utils.print_entrypoint(__name__, __file__)
 print('\tInitializing data...')
 DATA_FILE = 'ice_thickness_2022.nc'
@@ -117,13 +118,13 @@ def init_map():
     map = reinit_map()
     reinit_colormesh(map)
     return map
-
 def save_coord_map(name):
     plt.title(str(name) + " map")
     # plt.show()
     if utils.verbose_mode:
         print("\tSaving figure...")
-    plt.savefig("images/" + str(name) + '.png')
+    file_path = IMAGES_PATH / f"{name}.png"
+    plt.savefig(file_path)
     if utils.verbose_mode:
         print("\tFinished.")
     plt.close()

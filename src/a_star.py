@@ -542,21 +542,25 @@ def run_search(start_coordinate, end_coordinate, ship_selected: Optional[str] = 
                 for selected_fuel in fuel_class.fuel_list:
                     path, score, search_successful = A_star_search_algorithm(start_coordinate, end_coordinate, selected_ship, fuel_selected)
                     document_search(start_coordinate, end_coordinate, path, score, search_successful)
+                    print_results(selected_fuel, selected_ship, score)
         case [ship_name, None]:
             selected_ship = ship_class.__from_str__(ship_name)
             for selected_fuel in fuel_class.fuel_list:
                 path, score, search_successful = A_star_search_algorithm(start_coordinate, end_coordinate, selected_ship, fuel_selected)
                 document_search(start_coordinate, end_coordinate, path, search_successful)
+                print_results(selected_fuel, selected_ship, score)
         case [None, fuel_name]:
             selected_fuel = fuel_class.__from_str__(fuel_name)
             for selected_ship in ship_class.ship_list:
                 path, score, search_successful = A_star_search_algorithm(start_coordinate, end_coordinate, selected_ship, selected_fuel)
                 document_search(start_coordinate, end_coordinate, path, score, search_successful)
+                print_results(selected_fuel, selected_ship, score)
         case [ship_name, fuel_name]:
             selected_ship = ship_class.__from_str__(ship_name)
             selected_fuel = fuel_class.__from_str__(fuel_name)
             path, score, search_successful = A_star_search_algorithm(start_coordinate, end_coordinate, selected_ship, selected_fuel)
             document_search(start_coordinate, end_coordinate, path, score, search_successful)
+            print_results(selected_fuel, selected_ship, score)
 import csv_print_
 def document_search(start_coordinate: Coordinate, end_coordinate: Coordinate, path, score, search_successful):
     if path != None and search_successful:
@@ -596,6 +600,8 @@ def document_search(start_coordinate: Coordinate, end_coordinate: Coordinate, pa
         print('Check images directory to see details, there will be a new map there, containing some points for debugging.\nThe large dots indicate start/end coordinates, the small ones indicate the path attempted.')
 
 
+def print_results(fuel_type: Type[Fuel], ship_type: Type[Ship], price: float):
+    print(f'Results:\n Ship\n{ship_type}\n Fuel\n{fuel_type}\nFinal price :{price}')
 # TESTING SECTION
 
 # defining start and end coordinates (lat,lon)

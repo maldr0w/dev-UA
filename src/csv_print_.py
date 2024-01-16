@@ -1,6 +1,9 @@
+from pathlib import Path
+CSV_FOLDER = Path("csv/")
 def write_csv_data(f_name: str, csv_array):
+    f_path = CSV_FOLDER / f"{f_name}.csv"
     try:
-        with open(f"csv/{f_name}.csv", 'a') as f:
+        with open(f_path, 'a') as f:
             for data_point in csv_array:
                 x0_, x1_ = data_point.split(',')
                 x0 = x0_.replace('.', ',')
