@@ -573,7 +573,6 @@ def document_search(start_coordinate: Coordinate, end_coordinate: Coordinate, pa
             # print(data_point)
             # csv_string = csv_string + '\n' + data_point
         # print(csv_string)
-        print()
         csv_print_.write_csv_data(search_name, csv_data)
         # csv_path = 'democsv.csv'
         # with open(csv_path, 'a') as f:
