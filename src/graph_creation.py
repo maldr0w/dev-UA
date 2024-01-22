@@ -467,18 +467,17 @@ def create_graphs(thickness=0.0):
     graphdata = create_single_graphs(thickness)
     print('Creating cluster-graphs...')
     fig, axes = plt.subplots(ncols = ship_class.ship_list.__len__(), nrows = fuel_class.fuel_list.__len__(), sharey='row', sharex='col')
+    # Column corresponds to graph grid location
     for col, ship in enumerate(ship_class.ship_list):
-        # ship_data = graphdata[ship_name]
 
-        # time_data = ship_data[0]
         g_setup(ship.name, axes[0, col], 'Time [seconds]')
         velocities = ship.get_velocity_range(thickness)
         axes[0, col].plot(velocities, ship.get_duration_range(thickness, 1000.0))
-        # g_data(axes[0, col], time_data, ship_name, 'Time [hours]')
 
         fuel_data = graphdata[ship.name]
 
         velocities = []
+        # Row corresponds to graph grid location, key corresponds to the fuel
         for row, key in enumerate(fuel_data):
             label = ''
             ax = None

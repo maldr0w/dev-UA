@@ -31,8 +31,8 @@ class Ship:
 
         # Initialize remaining values
         self.total_power: KiloWatts = main_eng_pow + aux_eng_pow
-        self.max_velocity = 0.514 * design_speed
-        self.k = self.total_power / (self.max_velocity ** 3)
+        self.max_velocity: float = 0.514 * design_speed
+        self.k: float = self.total_power / (self.max_velocity ** 3)
 
     def __str__(self):
         return f"{self.name.upper()}\n\tMain engine: {self.main_eng_pow} kW\n\tAuxiliary engine: {self.aux_eng_pow}\n\tDesign speed: {self.design_speed}\n"
